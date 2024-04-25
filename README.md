@@ -72,6 +72,7 @@ $ cd eolib-php
 2. Install dependencies:
 ```console
 $ composer install
+$ composer dump-autoload
 ```
 
 3. Fetch the latest protocol files:
