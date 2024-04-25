@@ -59,7 +59,7 @@ class PHPFile {
         // Calculate namespace based on the file path relative to the root path
         $relativeNamespace = namespaceToPascalCase(str_replace('/', '\\', dirname($this->relativePath)));
         $pascalCaseNamespace = trim($relativeNamespace, '\\');
-        $namespace = "Protocol\\Generated" . (!empty($pascalCaseNamespace) && $pascalCaseNamespace != '.' ? "\\".$pascalCaseNamespace : "");
+        $namespace = "Eolib\\Protocol\\Generated" . (!empty($pascalCaseNamespace) && $pascalCaseNamespace != '.' ? "\\".$pascalCaseNamespace : "");
     
         $header->setNamespace($namespace);
     
