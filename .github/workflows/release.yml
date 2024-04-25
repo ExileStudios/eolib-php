@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+concurrency:
+  group: release
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1.13'
+          tools: composer
+
+      - name: Update dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Validate Composer configuration
+        run: composer validate
+
+      - name: Install dependencies
+        run: |
+          composer dump-autoload
+          composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Build package on release branch
+        run: |
+          composer build
+
+      - name: Create temp directory
+        run: |
+          mkdir generated_files
+
+      - name: Copy generated files to temp directory
+        run: |
+          mkdir -p generated_files/Eolib/Protocol/Generated
+          cp -R Eolib/Protocol/Generated/* generated_files/Eolib/Protocol/Generated/
+          mkdir -p generated_files/docs
+          cp -R docs/* generated_files/docs/
+
+      - name: Zip generated files
+        run: |
+          cd generated_files
+          zip -r protocolGenerated.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          body: "Release details here"
+          tag_name: ${{ github.ref }}
+          files: |
+            generated_files/protocolGenerated.zip
+
+      - name: Cleanup
+        run: |
+          rm -rf generated_files
+
+      - name: Publish to Packagist
+        env:
+          PACKAGE_URL: https://github.com/ExileStudios/eolib-php
+        run: |
+          curl -XPOST -H "Content-Type: application/json" \
+              -d "{\"repository\":{\"url\":\"${PACKAGE_URL}\"}}" \
+              "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_API_TOKEN }}"

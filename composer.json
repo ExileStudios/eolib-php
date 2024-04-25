@@ -1,0 +1,59 @@
+{
+    "name": "exilestudios/eolib-php",
+    "description": "A PHP library for protocol code generation and other functionalities.",
+    "type": "library",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "ProtocolCodeGenerator\\": "ProtocolCodeGenerator/",
+            "Eolib\\": "Eolib/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Stephen Michael",
+            "email": "officialexile@live.com"
+        }
+    ],
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true
+        }
+    },
+    "scripts": {
+        "fetch-protocol": [
+            "rm -rf eo-protocol",
+            "git clone https://github.com/Cirras/eo-protocol.git"
+        ],
+        "generate-protocol": [
+            "php Protocol.php generate"
+        ],
+        "generate-docs": [
+            "php phpDocumentor.phar run -d ./Eolib/ -t docs/"
+        ],
+        "build": [
+            "@fetch-protocol",
+            "@generate-protocol",
+            "@generate-docs"
+        ],
+        "post-install-cmd": [
+            "@dump-autoload"
+        ],
+        "post-update-cmd": [
+            "@dump-autoload"
+        ],
+        "dump-autoload": [
+            "composer dump-autoload"
+        ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
+}

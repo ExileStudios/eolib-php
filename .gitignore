@@ -1,0 +1,9 @@
+# Protocol files
+eo-protocol/*
+# Generated protocol code
+Eolib/Protocol/Generated
+# Composer dependencies
+vendor
+# Doc files
+.phpdoc
+docs/*
