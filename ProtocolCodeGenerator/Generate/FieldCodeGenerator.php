@@ -290,7 +290,7 @@ class FieldCodeGenerator
      */
     public function getPHPTypeName($fieldType)
     {
-        if ($fieldType instanceof IntegerType) {
+        if ($fieldType instanceof IntegerType || $fieldType instanceof EnumType) {
             return "int";
         }
 
