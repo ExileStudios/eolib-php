@@ -231,6 +231,24 @@ class EoReader {
     }
 
     /**
+     * Sets the chunked reading mode.
+     * 
+     * @param bool $value True to enable chunked reading mode, false to disable it.
+     */
+    public function setChunkedReadingMode($value) {
+        $this->chunkedReadingMode = $value;
+    }
+
+    /**
+     * Gets the current position of the reader in the input data.
+     * 
+     * @return int The current position.
+     */
+    public function getPosition() {
+        return $this->position;
+    }
+
+    /**
      * Gets the number of bytes remaining in the current chunk or in the input data.
      *
      * @return int The number of bytes remaining.
