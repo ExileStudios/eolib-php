@@ -309,7 +309,8 @@ class SwitchCodeGenerator
                     "\"{$caseValue}\" is not a valid value for enum type {$fieldType->name()}."
                 );
             }
-            return "{$fieldType->name()}::{$enumValue->name()}";
+            $enumValueName = strtoupper($enumValue->name());
+            return "{$fieldType->name()}::{$enumValueName}";
         }
 
         throw new \RuntimeException(
