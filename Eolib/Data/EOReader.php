@@ -110,7 +110,7 @@ class EoReader {
      * @return int A decoded 1-byte integer.
      */
     public function getChar() {
-        return decode_number($this->readBytes(1));
+        return NumberEncodingUtils::decodeNumber($this->readBytes(1));
     }
 
     /**
@@ -119,7 +119,7 @@ class EoReader {
      * @return int A decoded 2-byte integer.
      */
     public function getShort() {
-        return decode_number($this->readBytes(2));
+        return NumberEncodingUtils::decodeNumber($this->readBytes(2));
     }
 
     /**
@@ -128,7 +128,7 @@ class EoReader {
      * @return int A decoded 3-byte integer.
      */
     public function getThree() {
-        return decode_number($this->readBytes(3));
+        return NumberEncodingUtils::decodeNumber($this->readBytes(3));
     }
 
     /**
@@ -137,7 +137,7 @@ class EoReader {
      * @return int A decoded 4-byte integer.
      */
     public function getInt() {
-        return decode_number($this->readBytes(4));
+        return NumberEncodingUtils::decodeNumber($this->readBytes(4));
     }
 
     /**
