@@ -122,6 +122,8 @@ class ProtocolCodeGenerator {
             $packetElements = $protocol->packet;
 
             $sourcePath = str_replace($this->inputRoot, '', dirname($protocolFilePath));
+            $pathParts = explode(DIRECTORY_SEPARATOR, trim(strtolower($sourcePath), DIRECTORY_SEPARATOR));
+            $context = end($pathParts);
 
             foreach ($enumElements as $protocolEnum) {
                 if (!$this->typeFactory->defineCustomType($protocolEnum, $sourcePath)) {
@@ -137,7 +139,7 @@ class ProtocolCodeGenerator {
 
             $declaredPackets = [];
             foreach ($packetElements as $protocolPacket) {
-                $packetIdentifier = "{$protocolPacket['family']}_{$protocolPacket['action']}";
+                $packetIdentifier = "{$context}_{$protocolPacket['family']}_{$protocolPacket['action']}";
                 if (in_array($packetIdentifier, $declaredPackets)) {
                     throw new RuntimeException("Packet identifier {$packetIdentifier} cannot be redefined in the same file.");
                 }
@@ -166,11 +168,16 @@ class ProtocolCodeGenerator {
     public function generateSourceFile(ProtocolFile $protocolFile) {
         $protocol = $protocolFile->protocol;
         
-        $phpFiles = array_merge(
-            array_map([$this, 'generateEnum'], $protocol->xpath("enum")),
-            array_map([$this, 'generateStruct'], $protocol->xpath("struct")),
-            array_map([$this, 'generatePacket'], $protocol->xpath("packet"))
-        );
+        $phpFiles = [];
+        foreach ($protocol->enum as $enum) {
+            $phpFiles[] = $this->generateEnum($enum);
+        }
+        foreach ($protocol->struct as $struct) {
+            $phpFiles[] = $this->generateStruct($struct);
+        }
+        foreach ($protocol->packet as $packet) {
+            $phpFiles[] = $this->generatePacket($packet, $protocolFile);
+        }
         
         $generatedInit = new CodeBlock();
         foreach ($phpFiles as $phpFile) {
@@ -266,12 +273,14 @@ class ProtocolCodeGenerator {
      * @param SimpleXMLElement $protocol_packet The XML element representing a packet.
      * @return PHPFile The generated PHP file encapsulating the packet.
      */
-    public function generatePacket($protocol_packet) {
-        $sourcePath = namespaceToPascalCase($this->packetPaths[$protocol_packet['family'] . '_' . $protocol_packet['action']]['path']);
+    public function generatePacket(SimpleXMLElement $protocol_packet, ProtocolFile $protocolFile) {
+        $sourcePath = namespaceToPascalCase($protocolFile->getRelativePath($this->inputRoot));
+        $packetPrefix = $this->makePacketPrefix($sourcePath);
+        $sourcePath = namespaceToPascalCase($this->packetPaths[$packetPrefix. '_' .$protocol_packet['family'] . '_' . $protocol_packet['action']]['path']);
         $packetSuffix = $this->makePacketSuffix($sourcePath);
-        $familyAttribute = $protocol_packet['family'];
-        $actionAttribute = $protocol_packet['action'];
-        $packettypeName = $familyAttribute . $actionAttribute . $packetSuffix;
+        $familyAttribute = (string) $protocol_packet['family'];
+        $actionAttribute = (string) $protocol_packet['action'];
+        $packettypeName = "{$familyAttribute}{$actionAttribute}{$packetSuffix}";
 
         echo "Generating packet: {$packettypeName}\n";
 
@@ -385,6 +394,17 @@ class ProtocolCodeGenerator {
             return "ServerPacket";
         } else {
             throw new Exception("Cannot create packet name suffix for path {$path}");
+        }
+    }
+
+    public function makePacketPrefix($path) {
+        $path = strtolower($path);
+        if ($path == "net/client/protocol.xml") {
+            return "client";
+        } elseif ($path == "net/server/protocol.xml") {
+            return "server";
+        } else {
+            throw new Exception("Cannot create packet name prefix for path {$path}");
         }
     }
 }
