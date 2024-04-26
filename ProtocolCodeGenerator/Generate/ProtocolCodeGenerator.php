@@ -367,11 +367,10 @@ class ProtocolCodeGenerator {
             );
         }
         $codeBlock->addCodeBlock($objectCodeGenerator->code());
-        $codeBlock->addImport("Packet", "Protocol\\Generated\\Packet\\Packet");
-        $codeBlock->addImport("PacketFamily", "Protocol\\Generated\\Enum\\PacketFamily");
-        $codeBlock->addImport("PacketAction", "Protocol\\Generated\\Enum\\PacketAction");
-        $codeBlock->addImport("EoWriter", "Eolib\\Protocol\\EoWriter");
-        $codeBlock->addImport("EoReader", "Eolib\\Protocol\\EoReader");
+        $codeBlock->addImport("PacketFamily", "Eolib\\Protocol\\Generated\\Net");
+        $codeBlock->addImport("PacketAction", "Eolib\\Protocol\\Generated\\Net");
+        $codeBlock->addImport("EoWriter", "Eolib\\Data");
+        $codeBlock->addImport("EoReader", "Eolib\\Data");
 
         $relativePath = $sourcePath . '/' . $packettypeName;
         $this->exports[] = $relativePath;

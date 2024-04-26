@@ -558,7 +558,7 @@ class FieldCodeGenerator
         $this->data->serialize->beginControlFlow("if (\$data->{$this->name} === null)");
         $this->data->serialize->addLine("throw new SerializationError('{$this->name} must be provided.');");
         $this->data->serialize->endControlFlow();
-        $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol\\SerializationError");
+        $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol");
     }
 
     /**
@@ -598,7 +598,7 @@ class FieldCodeGenerator
         );
         $this->data->serialize->addLine("throw new SerializationError(\"{$errorMessage}\");");
         $this->data->serialize->endControlFlow();
-        $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol\\SerializationError");
+        $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol");
     }
     
     /**
