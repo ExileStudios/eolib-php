@@ -182,6 +182,8 @@ class ObjectCodeGenerator {
         }
 
         $result = new CodeBlock();
+        $result->addImport("EoWriter", "Eolib\\Data");
+        $result->addImport("EoReader", "Eolib\\Data");
         if (!empty($this->data->docstring)) {
             $result->addCodeBlock($this->data->docstring);
 
