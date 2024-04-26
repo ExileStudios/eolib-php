@@ -323,7 +323,7 @@ class ProtocolCodeGenerator {
             ->addLine("public static function family(): PacketFamily")
             ->addLine("{")
             ->indent()
-            ->addLine("return PacketFamily::" . $familyEnumValue->name() . ";")
+            ->addLine("return PacketFamily::" . strtoupper($familyEnumValue->name()) . ";")
             ->unindent()
             ->addLine("}")
         );
@@ -338,7 +338,7 @@ class ProtocolCodeGenerator {
             ->addLine("public static function action(): PacketAction")
             ->addLine("{")
             ->indent()
-            ->addLine("return PacketAction::" . $actionEnumValue->name() . ";")
+            ->addLine("return PacketAction::" . strtoupper($actionEnumValue->name()) . ";")
             ->unindent()
             ->addLine("}")
         );
