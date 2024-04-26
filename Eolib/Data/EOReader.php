@@ -222,6 +222,15 @@ class EoReader {
     }
 
     /**
+     * Gets the value of the chunked reading mode.
+     * 
+     * @return bool True if in chunked reading mode, false otherwise.
+     */
+    public function isChunkedReadingMode() {
+        return $this->chunkedReadingMode;
+    }
+
+    /**
      * Gets the number of bytes remaining in the current chunk or in the input data.
      *
      * @return int The number of bytes remaining.
