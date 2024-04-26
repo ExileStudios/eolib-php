@@ -291,7 +291,7 @@ class SwitchCodeGenerator
         }
 
         if ($fieldType instanceof EnumType) {
-            $ordinalValue = tryCastInt($caseValue);
+            $ordinalValue = is_numeric($caseValue) ? intval($caseValue) : null;
             if ($ordinalValue !== null) {
                 $enumValue = $fieldType->getEnumValueByOrdinal($ordinalValue);
                 if ($enumValue !== null) {
