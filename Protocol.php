@@ -12,12 +12,12 @@ class Protocol {
         $generated = $this->generatedDir();
         if (file_exists($generated)) {
             echo "Removing: $generated\n";
-            $this->_removeDirectory($generated);
+            $this->removeDirectory($generated);
         }
     }
 
     public function generate() {
-        $code_generator = new ProtocolCodeGenerator($this->_eo_protocol_dir());
+        $code_generator = new ProtocolCodeGenerator($this->eoProtocolDir());
         $code_generator->generate($this->generatedDir());
     }
 
@@ -25,14 +25,14 @@ class Protocol {
         return dirname(__FILE__) . '/Eolib/Protocol/Generated';
     }
 
-    private function _eo_protocol_dir() {
+    private function eoProtocolDir() {
         return dirname(__FILE__) . '/eo-protocol/xml';
     }
 
-    private function _removeDirectory($path) {
+    private function removeDirectory($path) {
         $files = array_diff(scandir($path), array('.','..'));
         foreach ($files as $file) {
-            (is_dir("$path/$file")) ? $this->_removeDirectory("$path/$file") : unlink("$path/$file");
+            (is_dir("$path/$file")) ? $this->removeDirectory("$path/$file") : unlink("$path/$file");
         }
         return rmdir($path);
     }
