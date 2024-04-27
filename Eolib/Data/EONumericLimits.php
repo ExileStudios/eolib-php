@@ -17,25 +17,25 @@ namespace Eolib\Data;
  *
  * @var int
  */
-define('EOLIB_CHAR_MAX', 253);
+const EO_CHAR_MAX = 253;
 
 /**
  * The maximum value that can be represented by two bytes (unsigned).
  *
  * @var int
  */
-define('EOLIB_SHORT_MAX', EOLIB_CHAR_MAX * EOLIB_CHAR_MAX);
+const EO_SHORT_MAX = CHAR_MAX * CHAR_MAX;
 
 /**
  * The maximum value that can be represented by three bytes (unsigned).
  *
  * @var int
  */
-define('EOLIB_THREE_MAX', EOLIB_CHAR_MAX * EOLIB_CHAR_MAX * EOLIB_CHAR_MAX);
+const EO_THREE_MAX = CHAR_MAX * CHAR_MAX * CHAR_MAX;
 
 /**
  * The maximum value that can be represented by four bytes (unsigned).
  *
  * @var int
  */
-define('EOLIB_INT_MAX', EOLIB_CHAR_MAX * EOLIB_CHAR_MAX * EOLIB_CHAR_MAX * EOLIB_CHAR_MAX);
+const EO_INT_MAX = CHAR_MAX * CHAR_MAX * CHAR_MAX * CHAR_MAX;
