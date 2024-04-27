@@ -56,12 +56,12 @@ class EoWriter
     /**
      * Adds an encoded character to the data array as a 1-byte integer.
      *
-     * @param int $number The character code to add (must be within EOLIB_CHAR_MAX - 1).
+     * @param int $number The character code to add (must be within EO_CHAR_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
     public function addChar(int $number): void
     {
-        $this->checkNumberSize($number, EOLIB_CHAR_MAX - 1);
+        $this->checkNumberSize($number, EO_CHAR_MAX - 1);
         $numberBytes = NumberEncodingUtils::encodeNumber($number);
         $this->addBytesWithLength($numberBytes, 1);
     }
@@ -69,12 +69,12 @@ class EoWriter
     /**
      * Adds an encoded short integer to the data array as a 2-byte integer.
      *
-     * @param int $number The short to add (must be within EOLIB_SHORT_MAX - 1).
+     * @param int $number The short to add (must be within EO_SHORT_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
     public function addShort(int $number): void
     {
-        $this->checkNumberSize($number, EOLIB_SHORT_MAX - 1);
+        $this->checkNumberSize($number, EO_SHORT_MAX - 1);
         $numberBytes = NumberEncodingUtils::encodeNumber($number);
         $this->addBytesWithLength($numberBytes, 2);
     }
@@ -82,12 +82,12 @@ class EoWriter
     /**
      * Adds an encoded integer to the data array as a 3-byte integer.
      *
-     * @param int $number The integer to add (must be within EOLIB_THREE_MAX - 1).
+     * @param int $number The integer to add (must be within EO_THREE_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
     public function addThree(int $number): void
     {
-        $this->checkNumberSize($number, EOLIB_THREE_MAX - 1);
+        $this->checkNumberSize($number, EO_THREE_MAX - 1);
         $numberBytes = NumberEncodingUtils::encodeNumber($number);
         $this->addBytesWithLength($numberBytes, 3);
     }
@@ -95,12 +95,12 @@ class EoWriter
     /**
      * Adds an encoded integer to the data array as a 4-byte integer.
      *
-     * @param int $number The integer to add (must be within EOLIB_INT_MAX - 1).
+     * @param int $number The integer to add (must be within EO_INT_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
     public function addInt(int $number): void
     {
-        $this->checkNumberSize($number, EOLIB_INT_MAX - 1);
+        $this->checkNumberSize($number, EO_INT_MAX - 1);
         $numberBytes = NumberEncodingUtils::encodeNumber($number);
         $this->addBytesWithLength($numberBytes, 4);
     }

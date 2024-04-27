@@ -24,21 +24,21 @@ class NumberEncodingUtils {
      */
     public static function encodeNumber(int $number): array {
         $d = 0xFE;
-        if ($number >= EOLIB_THREE_MAX) {
-            $d = intdiv($number, EOLIB_THREE_MAX) + 1;
-            $number %= EOLIB_THREE_MAX;
+        if ($number >= EO_THREE_MAX) {
+            $d = intdiv($number, EO_THREE_MAX) + 1;
+            $number %= EO_THREE_MAX;
         }
 
         $c = 0xFE;
-        if ($number >= EOLIB_SHORT_MAX) {
-            $c = intdiv($number, EOLIB_SHORT_MAX) + 1;
-            $number %= EOLIB_SHORT_MAX;
+        if ($number >= EO_SHORT_MAX) {
+            $c = intdiv($number, EO_SHORT_MAX) + 1;
+            $number %= EO_SHORT_MAX;
         }
 
         $b = 0xFE;
-        if ($number >= EOLIB_CHAR_MAX) {
-            $b = intdiv($number, EOLIB_CHAR_MAX) + 1;
-            $number %= EOLIB_CHAR_MAX;
+        if ($number >= EO_CHAR_MAX) {
+            $b = intdiv($number, EO_CHAR_MAX) + 1;
+            $number %= EO_CHAR_MAX;
         }
 
         $a = $number + 1;
@@ -75,13 +75,13 @@ class NumberEncodingUtils {
                     $result += $value;
                     break;
                 case 1:
-                    $result += EOLIB_CHAR_MAX * $value;
+                    $result += EO_CHAR_MAX * $value;
                     break;
                 case 2:
-                    $result += EOLIB_SHORT_MAX * $value;
+                    $result += EO_SHORT_MAX * $value;
                     break;
                 case 3:
-                    $result += EOLIB_THREE_MAX * $value;
+                    $result += EO_THREE_MAX * $value;
                     break;
             }
         }
