@@ -18,6 +18,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Update Submodules
+        run: |
+          git submodule update --init --recursive
+
       - name: Setup PHP Environment
         uses: shivammathur/setup-php@v2
         with:
