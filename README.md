@@ -5,9 +5,7 @@ A core PHP library for writing applications related to Endless Online.
 ## Installation
 
 ```console
-$ composer require exilestudios/eolib-php
-$ composer run-script dump-autoload -d vendor/exilestudios/eolib-php
-$ composer run-script build -d vendor/exilestudios/eolib-php
+$ composer require exilestudios/eolib-php-dist
 ```
 
 ## Features
@@ -53,6 +51,10 @@ Here's an example of how to use the PacketFamily class from the library:
         // ...
     }
 ```
+
+## Documentation
+The library documentation is available online at: [https://exilestudios.github.io/eolib-php](https://exilestudios.github.io/eolib-php)
+You can browse the documentation to learn about the available classes, methods, and their usage.
 
 ## Development
 

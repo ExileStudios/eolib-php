@@ -60,5 +60,19 @@ Here's an example of how to use the PacketFamily class from the library:
     }
 ```
 
+## Documentation
+
+The library documentation is available online at: [https://exilestudios.github.io/eolib-php](https://exilestudios.github.io/eolib-php)
+
+You can browse the documentation to learn about the available classes, methods, and their usage.
+
+For the most up-to-date documentation, please refer to the main repository: [ExileStudios/eolib-php](https://github.com/ExileStudios/eolib-php)
+
+## Contributing
+
+If you would like to contribute to the development of EOLib, please visit the main repository: [ExileStudios/eolib-php](https://github.com/ExileStudios/eolib-php)
+
+There you will find information on how to set up the development environment, contribute code, and report issues.
+
 ## License
 This library is open-source software licensed under the MIT license.
