@@ -13,65 +13,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main branch
+      - name: Checkout Main Branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup PHP
+      - name: Setup PHP Environment
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1.13'
           tools: composer
 
-      - name: Update dependencies
+      - name: Update Dependencies
         run: composer update --no-interaction --no-progress --prefer-dist
 
-      - name: Validate Composer configuration
+      - name: Validate Composer Configuration
         run: composer validate
 
-      - name: Install dependencies
+      - name: Install Dependencies and Dump Autoload
         run: |
-          composer dump-autoload
           composer install --no-interaction --no-progress --prefer-dist
+          composer dump-autoload
 
-      - name: Build package on release branch
-        run: |
-          composer build
+      - name: Build Package
+        run: composer build
 
-      - name: Create temp directory
+      - name: Prepare Generated Files Directory
         run: |
           mkdir generated_files
-
-      - name: Copy generated files to temp directory
-        run: |
           mkdir -p generated_files/Eolib/Protocol/Generated
-          cp -R Eolib/Protocol/Generated/* generated_files/Eolib/Protocol/Generated/
           mkdir -p generated_files/docs
+          cp -R Eolib/Protocol/Generated/* generated_files/Eolib/Protocol/Generated/
           cp -R docs/* generated_files/docs/
+          cp -R vendor generated_files/vendor
 
-      - name: Zip generated files
-        run: |
-          cd generated_files
-          zip -r protocolGenerated.zip .
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Checkout Distribution Repository
+        uses: actions/checkout@v4
         with:
-          name: Release ${{ github.ref_name }}
-          body: "Release details here"
-          tag_name: ${{ github.ref }}
-          files: |
-            generated_files/protocolGenerated.zip
+          repository: 'ExileStudios/eolib-php-dist'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: 'eolib-php-dist'
+          ref: 'main'
 
-      - name: Cleanup
+      - name: Transfer Files to Distribution Repository
         run: |
-          rm -rf generated_files
+          cp -R generated_files/* eolib-php-dist/
+          mkdir -p eolib-php-dist/.github/workflows
+          cp .github/workflows/dist-release.yml eolib-php-dist/.github/workflows/release.yml
 
-      - name: Publish to Packagist
-        env:
-          PACKAGE_URL: https://github.com/ExileStudios/eolib-php
+      - name: Commit and Push Changes
+        working-directory: ./eolib-php-dist
         run: |
-          curl -XPOST -H "Content-Type: application/json" \
-              -d "{\"repository\":{\"url\":\"${PACKAGE_URL}\"}}" \
-              "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_API_TOKEN }}"
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@github.com'
+          git add .
+          git commit -m "Update generated files and workflow for release ${{ github.ref_name }}"
+          git push origin HEAD:main
+          git tag ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }}
+
+      - name: Cleanup Temporary Files
+        run: rm -rf generated_files
