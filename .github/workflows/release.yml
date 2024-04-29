@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'ExileStudios/eolib-php-dist'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           path: 'eolib-php-dist'
           ref: 'main'
 
