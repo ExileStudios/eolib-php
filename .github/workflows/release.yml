@@ -59,7 +59,7 @@ jobs:
         run: |
           cp -R generated_files/* eolib-php-dist/
           mkdir -p eolib-php-dist/.github/workflows
-          cp .github/workflows/dist-release.yml eolib-php-dist/.github/workflows/release.yml
+          cp .github/dist_workflows/release.yml eolib-php-dist/.github/workflows/release.yml
 
       - name: Commit and Push Changes
         working-directory: ./eolib-php-dist
