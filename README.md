@@ -34,7 +34,7 @@ Here's an example of how to use the PacketFamily class from the library:
 ```php
     <?php
 
-    require_once 'vendor/exilestudios/eolib-php/vendor/autoload.php';
+    require_once 'vendor/exilestudios/eolib-php-dist/vendor/autoload.php';
 
     use Eolib\Protocol\Generated\Net\PacketFamily;
 
