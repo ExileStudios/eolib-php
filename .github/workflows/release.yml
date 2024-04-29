@@ -51,6 +51,7 @@ jobs:
           cp -R docs/* generated_files/docs/
           cp -R vendor generated_files/vendor
           cp dist/composer.json generated_files/composer.json
+          cp dist/README.md generated_files/README.md
 
       - name: Checkout Distribution Repository
         uses: actions/checkout@v4
