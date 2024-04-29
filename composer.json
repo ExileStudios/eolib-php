@@ -26,11 +26,6 @@
         }
     },
     "scripts": {
-        "fetch-protocol": [
-            "rm -rf eo-protocol",
-            "git clone -b master --single-branch https://github.com/Cirras/eo-protocol.git eo-protocol",
-            "cd eo-protocol && git checkout 4324c3c009ab76985375a007bc1e7e6aa8e47de5"
-        ],        
         "generate-protocol": [
             "php Protocol.php generate"
         ],
@@ -38,7 +33,6 @@
             "php phpDocumentor.phar run -d ./Eolib/ -t docs/"
         ],
         "build": [
-            "@fetch-protocol",
             "@generate-protocol",
             "@generate-docs"
         ],

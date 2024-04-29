@@ -41,9 +41,9 @@ jobs:
       - name: Prepare Generated Files Directory
         run: |
           mkdir generated_files
-          mkdir -p generated_files/Eolib/Protocol/Generated
+          mkdir -p generated_files/Eolib
           mkdir -p generated_files/docs
-          cp -R Eolib/Protocol/Generated/* generated_files/Eolib/Protocol/Generated/
+          cp -R Eolib/* generated_files/Eolib/
           cp -R docs/* generated_files/docs/
           cp -R vendor generated_files/vendor
 
