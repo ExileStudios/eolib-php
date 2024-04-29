@@ -50,6 +50,7 @@ jobs:
           cp -R Eolib/* generated_files/Eolib/
           cp -R docs/* generated_files/docs/
           cp -R vendor generated_files/vendor
+          cp dist/composer.json generated_files/composer.json
 
       - name: Checkout Distribution Repository
         uses: actions/checkout@v4

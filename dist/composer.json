@@ -1,0 +1,22 @@
+{
+    "name": "exilestudios/eolib-php-dist",
+    "description": "A PHP library for protocol code generation and other functionalities.",
+    "type": "library",
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Eolib\\\\": "Eolib/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Stephen Michael",
+            "email": "officialexile@live.com"
+        }
+    ],
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
