@@ -75,7 +75,7 @@ function deinterleave(array &$data): void
 function flipMsb(array &$data): void
 {
     foreach ($data as &$byte) {
-        if ($byte & 0x7F !== 0) {
+        if ($byte !== 0 && $byte !== 128) {
             $byte ^= 0x80;
         }
     }
