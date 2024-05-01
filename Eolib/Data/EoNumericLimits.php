@@ -24,18 +24,18 @@ const EO_CHAR_MAX = 253;
  *
  * @var int
  */
-const EO_SHORT_MAX = CHAR_MAX * CHAR_MAX;
+const EO_SHORT_MAX = EO_CHAR_MAX * EO_CHAR_MAX;
 
 /**
  * The maximum value that can be represented by three bytes (unsigned).
  *
  * @var int
  */
-const EO_THREE_MAX = CHAR_MAX * CHAR_MAX * CHAR_MAX;
+const EO_THREE_MAX = EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX;
 
 /**
  * The maximum value that can be represented by four bytes (unsigned).
  *
  * @var int
  */
-const EO_INT_MAX = CHAR_MAX * CHAR_MAX * CHAR_MAX * CHAR_MAX;
+const EO_INT_MAX = EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX;
