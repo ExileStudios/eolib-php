@@ -1,5 +1,5 @@
 {
-    "name": "exilestudios/eolib-php-dist",
+    "name": "exilestudios/eolib-php",
     "description": "A PHP library for protocol code generation and other functionalities.",
     "type": "library",
     "require": {
