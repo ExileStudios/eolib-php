@@ -1,9 +1,13 @@
 # Protocol files
 eo-protocol/*
 # Generated protocol code
-Eolib/Protocol/Generated
+Eolib/Protocol
+# Allow provided protocol files
+!Eolib/Protocol/Net/Packet.php
+!Eolib/Protocol/SerializationError.php
 # Composer dependencies
 vendor
 # Doc files
 .phpdoc
 docs/*
+.phpunit.result.cache

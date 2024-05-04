@@ -2,6 +2,9 @@
 
 namespace Eolib\Data;
 
+use Eolib\Data\StringEncodingUtils;
+use Eolib\Data\EoNumericLimits;
+
 /**
  * A class for writing EO data to a sequence of bytes.
  * EoWriter enables serialization of different data types into a binary format,
@@ -10,9 +13,9 @@ namespace Eolib\Data;
 class EoWriter
 {
     /**
-     * @var array The internal data storage where all bytes are accumulated.
+     * @var \SplFixedArray<int> The internal data structure for storing bytes.
      */
-    private $data;
+    private \SplFixedArray $data;
 
     /**
      * @var bool Indicates whether string sanitization is enabled.
@@ -43,7 +46,7 @@ class EoWriter
     /**
      * Adds an array of bytes to the data array.
      *
-     * @param array $bytes The array of bytes to add.
+     * @param int[] $bytes The array of bytes to add.
      */
     public function addBytes(array $bytes): void
     {
@@ -56,52 +59,52 @@ class EoWriter
     /**
      * Adds an encoded character to the data array as a 1-byte integer.
      *
-     * @param int $number The character code to add (must be within EO_CHAR_MAX - 1).
+     * @param ?int $number The character code to add (must be within EO_CHAR_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
-    public function addChar(int $number): void
+    public function addChar(?int $number): void
     {
-        $this->checkNumberSize($number, EO_CHAR_MAX - 1);
-        $numberBytes = NumberEncodingUtils::encodeNumber($number);
+        $this->checkNumberSize($number ?? 0, EoNumericLimits::EO_CHAR_MAX - 1);
+        $numberBytes = NumberEncodingUtils::encodeNumber($number ?? 0);
         $this->addBytesWithLength($numberBytes, 1);
     }
 
     /**
      * Adds an encoded short integer to the data array as a 2-byte integer.
      *
-     * @param int $number The short to add (must be within EO_SHORT_MAX - 1).
+     * @param ?int $number The short to add (must be within EO_SHORT_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
-    public function addShort(int $number): void
+    public function addShort(?int $number): void
     {
-        $this->checkNumberSize($number, EO_SHORT_MAX - 1);
-        $numberBytes = NumberEncodingUtils::encodeNumber($number);
+        $this->checkNumberSize($number ?? 0, EoNumericLimits::EO_SHORT_MAX - 1);
+        $numberBytes = NumberEncodingUtils::encodeNumber($number ?? 0);
         $this->addBytesWithLength($numberBytes, 2);
     }
 
     /**
      * Adds an encoded integer to the data array as a 3-byte integer.
      *
-     * @param int $number The integer to add (must be within EO_THREE_MAX - 1).
+     * @param ?int $number The integer to add (must be within EO_THREE_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
-    public function addThree(int $number): void
+    public function addThree(?int $number): void
     {
-        $this->checkNumberSize($number, EO_THREE_MAX - 1);
-        $numberBytes = NumberEncodingUtils::encodeNumber($number);
+        $this->checkNumberSize($number ?? 0, EoNumericLimits::EO_THREE_MAX - 1);
+        $numberBytes = NumberEncodingUtils::encodeNumber($number ?? 0);
         $this->addBytesWithLength($numberBytes, 3);
     }
 
     /**
      * Adds an encoded integer to the data array as a 4-byte integer.
      *
-     * @param int $number The integer to add (must be within EO_INT_MAX - 1).
+     * @param ?int $number The integer to add (must be within EO_INT_MAX - 1).
      * @throws \ValueError If the number is out of the allowable range.
      */
-    public function addInt(int $number): void
+    public function addInt(?int $number): void
     {
-        $this->checkNumberSize($number, EO_INT_MAX - 1);
-        $numberBytes = NumberEncodingUtils::encodeNumber($number);
+        $this->checkNumberSize($number ?? 0, EoNumericLimits::EO_INT_MAX - 1);
+        $numberBytes = NumberEncodingUtils::encodeNumber($number ?? 0);
         $this->addBytesWithLength($numberBytes, 4);
     }
 
@@ -114,7 +117,7 @@ class EoWriter
     {
         $stringBytes = $this->encodeAnsi($string);
         $this->sanitizeString($stringBytes);
-        $this->addBytes($stringBytes->toArray());
+        $this->addBytes($stringBytes);
     }
 
     /**
@@ -133,6 +136,41 @@ class EoWriter
         if ($padded) {
             $stringBytes = $this->addPadding($stringBytes, $length);
         }
+        $this->addBytes($stringBytes);
+    }
+    
+    /**
+     * Adds a string to the data array, encoded in ANSI format and then encoded with the EO encryption scheme.
+     *
+     * @param string $string The string to encode and add.
+     */
+    public function addEncodedString(string $string): void
+    {
+        $stringBytes = $this->encodeAnsi($string);
+        $this->sanitizeString($stringBytes);
+        $sanitizedString = StringEncodingUtils::bytesToString($stringBytes);
+        $stringBytes = StringEncodingUtils::encodeString($sanitizedString);
+        $this->addBytes($stringBytes);
+    }
+
+    /**
+     * Adds a fixed-length string to the data array, optionally padded to length with `0xFF` and then encoded with the EO encryption scheme.
+     *
+     * @param string $string The string to encode and add.
+     * @param int $length The fixed length of the string.
+     * @param bool $padded Whether to pad the string with `0xFF` to the fixed length.
+     * @throws \ValueError If the string length does not match the specified length when not padded.
+     */
+    public function addFixedEncodedString(string $string, int $length, bool $padded = false): void
+    {
+        $this->checkStringLength($string, $length, $padded);
+        $stringBytes = $this->encodeAnsi($string);
+        $this->sanitizeString($stringBytes);
+        if ($padded) {
+            $stringBytes = $this->addPadding($stringBytes, $length);
+        }
+        $sanitizedString = StringEncodingUtils::bytesToString($stringBytes);
+        $stringBytes = StringEncodingUtils::encodeString($sanitizedString);
         $this->addBytes($stringBytes);
     }
 
@@ -159,11 +197,25 @@ class EoWriter
     /**
      * Converts the internal data array to a standard PHP array of bytes.
      *
-     * @return array An array of byte values.
+     * @return int[] An array of byte values.
      */
     public function toByteArray(): array
     {
-        return $this->data->toArray();
+        return array_filter($this->data->toArray(), function ($value) {
+            return $value !== null;
+        });
+    }
+
+    /**
+     * Converts the internal data array to a string of bytes.
+     *
+     * @return string A string of bytes.
+     */
+    public function toByteString(): string
+    {
+        return implode('', array_map(function ($value) {
+            return $value !== null ? chr($value) : '';
+        }, $this->data->toArray()));
     }
 
     /**
@@ -171,7 +223,7 @@ class EoWriter
      *
      * @return int The number of bytes in the internal data array.
      */
-    public function length(): int
+    public function getLength(): int
     {
         return count($this->data);
     }
@@ -179,7 +231,7 @@ class EoWriter
     /**
      * Adds an array of bytes to the data array with a specified length.
      *
-     * @param array $bytes The bytes to add.
+     * @param int[] $bytes The bytes to add.
      * @param int $bytesLength The length of bytes to add.
      */
     private function addBytesWithLength(array $bytes, int $bytesLength): void
@@ -193,7 +245,7 @@ class EoWriter
     /**
      * Sanitizes a string by replacing `0xFF` bytes with `0x79` ('y').
      *
-     * @param array &$bytes The array of bytes representing the string to sanitize.
+     * @param int[] &$bytes The array of bytes representing the string to sanitize.
      */
     private function sanitizeString(&$bytes): void
     {
@@ -223,11 +275,11 @@ class EoWriter
     /**
      * Adds padding to a byte array up to a specified length.
      *
-     * @param array $bytes The byte array to pad.
+     * @param int[] $bytes The byte array to pad.
      * @param int $length The length to pad to.
-     * @return array The padded byte array.
+     * @return int[] The padded byte array.
      */
-    private static function addPadding($bytes, int $length): array
+    private static function addPadding(array $bytes, int $length): array
     {
         if (count($bytes) == $length) {
             return $bytes;
@@ -237,7 +289,6 @@ class EoWriter
         foreach ($bytes as $i => $byte) {
             $result[$i] = $byte;
         }
-
         return $result;
     }
 
@@ -251,12 +302,12 @@ class EoWriter
      */
     private static function checkStringLength(string $string, int $length, bool $padded): void
     {
-        if ($padded && strlen($string) <= $length) {
+        if ($padded && mb_strlen($string) <= $length) {
             return;
         }
 
-        if (!$padded && strlen($string) != $length) {
-            throw new \ValueError("String '{$string}' does not have the expected length of {$length}.");
+        if (!$padded && mb_strlen($string) != $length) {
+            throw new \ValueError("String '{$string}' does not have the expected length of {$length}, actual length is " . mb_strlen($string) . ".");
         }
     }
 
@@ -264,10 +315,14 @@ class EoWriter
      * Encodes a string from UTF-8 to ANSI.
      *
      * @param string $string The UTF-8 string to encode.
-     * @return array The ANSI-encoded string as an array of bytes.
+     * @return int[] The ANSI-encoded string as an array of bytes.
      */
     private static function encodeAnsi(string $string): array
     {
-        return array_map('ord', str_split(iconv('UTF-8', 'Windows-1252//IGNORE', $string)));
+        $ansiString = iconv('UTF-8', 'Windows-1252//IGNORE', $string);
+        if ($ansiString === false) {
+            throw new \RuntimeException('Failed to convert string from UTF-8 to ANSI');
+        }
+        return array_map('ord', str_split($ansiString));
     }
 }

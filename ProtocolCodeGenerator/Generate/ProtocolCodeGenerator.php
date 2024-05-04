@@ -34,7 +34,7 @@ class ProtocolFile {
      * @return string The relative path of the protocol file.
      */
     public function getRelativePath($baseDir) {
-        $relativePath = substr($this->path, strlen($baseDir));
+        $relativePath = substr($this->path, mb_strlen($baseDir));
         $relativePath = ltrim($relativePath, '/\\');
         return str_replace('\\', '/', $relativePath);
     }
@@ -318,7 +318,7 @@ class ProtocolCodeGenerator {
             ->addLine('/**')
             ->addLine(" * Returns the packet family associated with this packet.")
             ->addLine(" *")
-            ->addLine(" * @return PacketFamily The packet family associated with this packet.")
+            ->addLine(" * @return int The packet family associated with this packet.")
             ->addLine(' */')
             ->addLine("public static function family(): int")
             ->addLine("{")
@@ -333,7 +333,7 @@ class ProtocolCodeGenerator {
             ->addLine('/**')
             ->addLine(" * Returns the packet action associated with this packet.")
             ->addLine(" *")
-            ->addLine(" * @return PacketAction The packet action associated with this packet.")
+            ->addLine(" * @return int The packet action associated with this packet.")
             ->addLine(' */')
             ->addLine("public static function action(): int")
             ->addLine("{")
@@ -367,8 +367,8 @@ class ProtocolCodeGenerator {
             );
         }
         $codeBlock->addCodeBlock($objectCodeGenerator->code());
-        $codeBlock->addImport("PacketFamily", "Eolib\\Protocol\\Generated\\Net");
-        $codeBlock->addImport("PacketAction", "Eolib\\Protocol\\Generated\\Net");
+        $codeBlock->addImport("PacketFamily", "Eolib\\Protocol\\Net");
+        $codeBlock->addImport("PacketAction", "Eolib\\Protocol\\Net");
         $codeBlock->addImport("EoWriter", "Eolib\\Data");
         $codeBlock->addImport("EoReader", "Eolib\\Data");
 
@@ -387,9 +387,9 @@ class ProtocolCodeGenerator {
      */
     public function makePacketSuffix($path) {
         $path = strtolower($path);
-        if ($path == "\\net\\client" || $path == "/net/client") {
+        if ($path == "net\\client" || $path == "/net/client") {
             return "ClientPacket";
-        } elseif ($path == "\\net\\server" || $path == "/net/server") {
+        } elseif ($path == "net\\server" || $path == "/net/server") {
             return "ServerPacket";
         } else {
             throw new Exception("Cannot create packet name suffix for path {$path}");
@@ -398,9 +398,9 @@ class ProtocolCodeGenerator {
 
     public function makePacketPrefix($path) {
         $path = strtolower($path);
-        if ($path == "net/client/protocol.xml") {
+        if ($path == "net\\client\\protocol.xml") {
             return "client";
-        } elseif ($path == "net/server/protocol.xml") {
+        } elseif ($path == "net\\server\\protocol.xml") {
             return "server";
         } else {
             throw new Exception("Cannot create packet name prefix for path {$path}");

@@ -12,8 +12,8 @@ class PacketSequencer
      * @var SequenceStart $_start The start of the sequence.
      * @var int $_counter The current position in the sequence.
      */
-    private $start;
-    private $counter;
+    private SequenceStart $start;
+    private int $counter;
 
     /**
      * Constructs a new PacketSequencer with the provided SequenceStart.

@@ -3,29 +3,24 @@
 namespace ProtocolCodeGenerator\Type;
 
 use ProtocolCodeGenerator\Type\BasicType;
+use ProtocolCodeGenerator\Type\Length;
 
 class StringType extends BasicType
 {
-    private $name;
-    private $length;
+    private Length $length;
 
-    public function __construct($name, $length)
+    public function __construct(string $name, Length $length)
     {
-        $this->name = $name;
+        parent::__construct($name, null, false);
         $this->length = $length;
     }
 
-    public function name()
-    {
-        return $this->name;
-    }
-
-    public function fixedSize()
+    public function fixedSize(): ?int
     {
         return $this->length->asInteger();
     }
 
-    public function bounded()
+    public function bounded(): bool
     {
         return $this->length->isSpecified();
     }

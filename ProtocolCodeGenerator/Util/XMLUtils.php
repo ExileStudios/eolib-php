@@ -4,9 +4,9 @@
  * Retrieves instructions from the given XML element.
  *
  * @param \SimpleXMLElement $element The XML element to retrieve instructions from.
- * @return array An array of instruction elements.
+ * @return \SimpleXMLElement[] An array of instruction elements.
  */
-function getInstructions($element)
+function getInstructions(SimpleXMLElement $element): array
 {
     $instructions = [];
     foreach ($element->children() as $child) {
@@ -23,9 +23,9 @@ function getInstructions($element)
  * @param \SimpleXMLElement $element The XML element to retrieve the attribute from.
  * @param string $name The name of the attribute.
  * @param string|null $defaultValue The default value to return if the attribute is not found.
- * @return string The attribute value or the default value if the attribute is not found.
+ * @return string|null The attribute value or the default value if the attribute is not found.
  */
-function getStringAttribute($element, $name, $defaultValue = null)
+function getStringAttribute(SimpleXMLElement $element, string $name, $defaultValue = null): ?string
 {
     $attributeText = (string)$element[$name];
     return $attributeText !== "" ? $attributeText : $defaultValue;

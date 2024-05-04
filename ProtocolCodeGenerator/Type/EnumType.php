@@ -2,55 +2,43 @@
 
 namespace ProtocolCodeGenerator\Type;
 
+use ProtocolCodeGenerator\Type\Type;
 use ProtocolCodeGenerator\Type\CustomType;
 use ProtocolCodeGenerator\Type\HasUnderlyingType;
 
 class EnumType extends CustomType implements HasUnderlyingType
 {
-    private $name;
-    private $sourcePath;
     private $underlyingType;
     private $values;
 
     public function __construct($name, $sourcePath, $underlyingType, $values)
     {
-        $this->name = $name;
-        $this->sourcePath = $sourcePath;
+        parent::__construct($name, null, false, $sourcePath);
         $this->underlyingType = $underlyingType;
         $this->values = $values;
     }
 
-    public function name()
-    {
-        return $this->name;
-    }
-
-    public function sourcePath()
-    {
-        return namespaceToPascalCase($this->sourcePath);
-    }
-
-    public function fixedSize()
+    public function fixedSize(): ?int
     {
         return $this->underlyingType->fixedSize();
     }
 
-    public function bounded()
+    public function bounded(): bool
     {
         return $this->underlyingType->bounded();
     }
 
-    public function underlyingType()
+    public function underlyingType(): Type
     {
         return $this->underlyingType;
     }
 
-    public function values()
+    public function values(): array
     {
         return $this->values;
     }
 
-    public function getEnumValueByOrdinal($ordinalValue)
+    public function getEnumValueByOrdinal($ordinalValue): ?EnumValue
     {
         foreach ($this->values as $value) {
             if ($value->ordinalValue() === $ordinalValue) {
@@ -60,7 +48,7 @@ class EnumType extends CustomType implements HasUnderlyingType
         return null;
     }
 
-    public function getEnumValueByName($name)
+    public function getEnumValueByName($name): ?EnumValue
     {
         foreach ($this->values as $value) {
             $valueName = trim($value->name());

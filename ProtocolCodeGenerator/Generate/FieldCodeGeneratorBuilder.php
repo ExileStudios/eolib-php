@@ -216,9 +216,11 @@ class FieldCodeGeneratorBuilder
         $processedTypeFactory = $this->getValueIfSimpleXMLElement($this->typeFactory);
         $processedContext = $this->getValueIfSimpleXMLElement($this->context);
         $processedData = $this->getValueIfSimpleXMLElement($this->data);
-        $processedName = snakeCaseToCamelCase($this->getValueIfSimpleXMLElement($this->name));
+        $name = $this->getValueIfSimpleXMLElement($this->name);
+        $processedName = $name !== null ? snakeCaseToCamelCase($name) : null;
         $processedType = $this->getValueIfSimpleXMLElement($this->type);
-        $processedLength = snakeCaseToCamelCase($this->getValueIfSimpleXMLElement($this->length));
+        $length = $this->getValueIfSimpleXMLElement($this->length);
+        $processedLength = $length !== null ? snakeCaseToCamelCase($length) : null;
         $processedPadded = $this->getValueIfSimpleXMLElement($this->padded);
         $processedOptional = $this->getValueIfSimpleXMLElement($this->optional);
         $processedHardcodedValue = $this->getValueIfSimpleXMLElement($this->hardcodedValue);

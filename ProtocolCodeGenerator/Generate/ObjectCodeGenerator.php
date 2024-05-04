@@ -92,6 +92,15 @@ class ObjectGenerationData {
     public function addAuxiliaryType($type) {
         $this->auxiliaryTypes->addCodeBlock($type);
     }
+
+    /**
+     * Gets the auxiliary type definitions that have been added to the class.
+     * 
+     * @return array The auxiliary type definitions.
+     */
+    public function getAuxiliaryType($type) {
+        return $this->auxiliaryTypes->getLines();
+    }
 }
 
 /**
@@ -129,6 +138,7 @@ class ObjectCodeGenerator {
         }
 
         $instructionName = $instruction->getName();
+        
         switch ($instructionName) {
             case 'field':
                 $this->generateField($instruction);
@@ -191,9 +201,10 @@ class ObjectCodeGenerator {
             ->addLine("{")
             ->indent();
         }
-        $result->addLine("private \$byteSize = 0;")
+        $result->addLine("private int \$byteSize = 0;")
             ->addCodeBlock($this->data->fields)
             ->addCodeBlock($this->generateGetByteSize())
+            ->addCodeBlock($this->generateSetByteSize())
             ->addCodeBlock($this->data->methods)
             ->addCodeBlock($this->generateSerializeMethod())
             ->addCodeBlock($this->generateDeserializeMethod())
@@ -228,6 +239,27 @@ class ObjectCodeGenerator {
             ->addLine('public function getByteSize(): int {')
             ->indent()
             ->addLine('return $this->byteSize;')
+            ->unindent()
+            ->addLine('}')
+        );
+    }
+
+    /**
+     * Generates the method that sets the size in bytes of the data that was serialized or deserialized.
+     *
+     * @return CodeBlock The generated method code.
+     */
+    public function generateSetByteSize() {
+        return (
+            (new CodeBlock())
+            ->addLine('/**')
+            ->addLine(' * Sets the size of the data that this was deserialized from.')
+            ->addLine(' *')
+            ->addLine(' * @param int $byteSize The size of the data that this was deserialized from.')
+            ->addLine(' */')
+            ->addLine('public function setByteSize(int $byteSize): void {')
+            ->indent()
+            ->addLine('$this->byteSize = $byteSize;')
             ->unindent()
             ->addLine('}')
         );
@@ -285,7 +317,7 @@ class ObjectCodeGenerator {
             ->indent()
             ->addLine('$reader_start_position = $reader->getPosition();')
             ->addCodeBlock($this->data->deserialize)
-            ->addLine("\$data->byteSize = \$reader->getPosition() - \$reader_start_position;")
+            ->addLine("\$data->setByteSize(\$reader->getPosition() - \$reader_start_position);")
             ->addLine("")
             ->addLine("return \$data;")
             ->unindent()
@@ -310,10 +342,57 @@ class ObjectCodeGenerator {
     
         foreach ($fields as $field) {
             $camelField = snakeCaseToCamelCase($field);
-            $parts[] = "{$camelField}=' . \$this->{$camelField} . '";
+            $value = "\$this->{$camelField}";
+    
+            // Check if the field is an array based on the field definition
+            $fieldLines = $this->data->fields->getLines();
+            $isArray = false;
+            $isObject = false;
+            foreach ($fieldLines as $line) {
+                if (strpos($line, $field) === false) {
+                    continue;
+                }
+
+                // Escaping special regex characters in $camelField
+                $escapedCamelField = preg_quote($camelField, '/');
+                $pattern = "/(private|public)\s+(\??[\w\\]+)\s+\$" . $escapedCamelField . "(\s*=\s*[^;]+)?\s*;/";
+            
+                // Regex to match property declarations including nullable types
+                if (preg_match($pattern, $line, $matches)) {
+                    $type = $matches[1];
+            
+                    // Check if the type is an array (this assumes arrays are declared with explicit array type hints like `array` or `[]`)
+                    if (strpos($type, 'array') !== false) {
+                        $isArray = true;
+                        break;
+                    }
+            
+                    // Check if the type is an object by excluding primitive types
+                    if (!in_array($type, ['int', 'string', 'float', 'bool', '?int', '?string', '?float', '?bool'])) {
+                        $isObject = true;
+                        break;
+                    }
+                }
+            }            
+    
+            $part = "{$camelField}=";
+
+            if ($isObject) {
+                $part .= "\".var_export({$value}, true).\"";
+            } else {
+                if ($isArray) {
+                    $value = "[\" . implode(', ', array_map(function (\$item) {
+                        return var_export(\$item, true); // Use var_export for each item in the array
+                    }, \$this->{$camelField})) . \"]";
+                }
+
+                $part .= "{$value}";
+            }
+
+            $parts[] = $part;
         }
     
-        $reprStr = implode("', ", $parts);
+        $reprStr = implode(", ", $parts);
     
         $codeBlock = new CodeBlock();
         $codeBlock->addLine("/**")
@@ -323,7 +402,7 @@ class ObjectCodeGenerator {
             ->addLine(" */")
             ->addLine("public function __toString(): string {")
             ->indent()
-            ->addLine('return "' . $this->className . '(' . $reprStr . ')";')
+            ->addLine("return \"{$this->className}({$reprStr})\";")
             ->unindent()
             ->addLine("}");
     

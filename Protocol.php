@@ -8,10 +8,15 @@ include 'ProtocolCodeGenerator/Util/NumberUtils.php';
 use ProtocolCodeGenerator\Generate\ProtocolCodeGenerator;
 
 class Protocol {
+    private $excludeFiles = [
+        'Net/Packet.php',
+        'SerializationError.php'
+    ];
+
     public function clean() {
         $generated = $this->generatedDir();
         if (file_exists($generated)) {
-            echo "Removing: $generated\n";
+            echo "Removing: $generated\n";  
             $this->removeDirectory($generated);
         }
     }
@@ -22,18 +27,38 @@ class Protocol {
     }
 
     private function generatedDir() {
-        return dirname(__FILE__) . '/Eolib/Protocol/Generated';
+        return dirname(__FILE__) . '/Eolib/Protocol';
     }
 
     private function eoProtocolDir() {
         return dirname(__FILE__) . '/eo-protocol/xml';
     }
 
-    private function removeDirectory($path) {
+    private function removeDirectory($path, $subPath = '') {
         $files = array_diff(scandir($path), array('.','..'));
         foreach ($files as $file) {
-            (is_dir("$path/$file")) ? $this->removeDirectory("$path/$file") : unlink("$path/$file");
+            $fullPath = "$path/$file";
+            $relativePath = $subPath . $file;
+            
+            if (in_array($relativePath, $this->excludeFiles)) {
+                echo "Excluding from deletion: $relativePath\n";
+                continue;
+            }
+
+            if (is_dir($fullPath)) {
+                $this->removeDirectory($fullPath, $relativePath . '/');
+            } else {
+                echo "Deleting file: $fullPath\n";
+                unlink($fullPath);
+            }
         }
+        
+        if (!empty($subPath) && in_array(rtrim($subPath, '/'), $this->excludeFiles)) {
+            echo "Excluding directory from deletion: $path\n";
+            return;
+        }
+
+        echo "Removing directory: $path\n";
         return rmdir($path);
     }
 }

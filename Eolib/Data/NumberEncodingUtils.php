@@ -2,6 +2,8 @@
 
 namespace Eolib\Data;
 
+use Eolib\Data\EoNumericLimits;
+
 /**
  * A class for encoding and decoding numeric values according to the EO protocol.
  *
@@ -20,29 +22,26 @@ class NumberEncodingUtils {
      * It supports encoding integers up to the size of an unsigned four-byte integer.
      *
      * @param int $number The number to encode.
-     * @return string The encoded number as a string of bytes.
+     * @return int[] The encoded number as a string of bytes.
      */
     public static function encodeNumber(int $number): array {
+        $value = $number;
         $d = 0xFE;
-        if ($number >= EO_THREE_MAX) {
-            $d = intdiv($number, EO_THREE_MAX) + 1;
-            $number %= EO_THREE_MAX;
+        if ($number >= EoNumericLimits::EO_THREE_MAX) {
+            $d = intdiv($value, EoNumericLimits::EO_THREE_MAX) + 1;
+            $value %= EoNumericLimits::EO_THREE_MAX;
         }
-
         $c = 0xFE;
-        if ($number >= EO_SHORT_MAX) {
-            $c = intdiv($number, EO_SHORT_MAX) + 1;
-            $number %= EO_SHORT_MAX;
+        if ($number >= EoNumericLimits::EO_SHORT_MAX) {
+            $c = intdiv($value, EoNumericLimits::EO_SHORT_MAX) + 1;
+            $value %= EoNumericLimits::EO_SHORT_MAX;
         }
-
         $b = 0xFE;
-        if ($number >= EO_CHAR_MAX) {
-            $b = intdiv($number, EO_CHAR_MAX) + 1;
-            $number %= EO_CHAR_MAX;
+        if ($number >= EoNumericLimits::EO_CHAR_MAX) {
+            $b = intdiv($value, EoNumericLimits::EO_CHAR_MAX) + 1;
+            $value = $value % EoNumericLimits::EO_CHAR_MAX;
         }
-
-        $a = $number + 1;
-
+        $a = $value + 1;
         return [$a, $b, $c, $d];
     }
 
@@ -54,15 +53,15 @@ class NumberEncodingUtils {
      * a sequence of bytes back into the original integer value. It supports
      * decoding from sequences up to four bytes long.
      *
-     * @param string $encodedNumber The encoded number as a string of bytes.
+     * @param int[] $encodedNumber The encoded number as a string of bytes.
      * @return int The decoded integer.
      */
-    public static function decodeNumber(string $encodedNumber): int {
+    public static function decodeNumber(array $encodedNumber): int {
         $result = 0;
-        $length = min(strlen($encodedNumber), 4);
+        $length = min(count($encodedNumber), 4);
 
         for ($i = 0; $i < $length; $i++) {
-            $value = ord($encodedNumber[$i]);
+            $value = $encodedNumber[$i];
 
             if ($value === 0xFE) {
                 break;
@@ -75,13 +74,13 @@ class NumberEncodingUtils {
                     $result += $value;
                     break;
                 case 1:
-                    $result += EO_CHAR_MAX * $value;
+                    $result += EoNumericLimits::EO_CHAR_MAX * $value;
                     break;
                 case 2:
-                    $result += EO_SHORT_MAX * $value;
+                    $result += EoNumericLimits::EO_SHORT_MAX * $value;
                     break;
                 case 3:
-                    $result += EO_THREE_MAX * $value;
+                    $result += EoNumericLimits::EO_THREE_MAX * $value;
                     break;
             }
         }

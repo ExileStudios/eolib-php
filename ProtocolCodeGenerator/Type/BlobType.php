@@ -6,18 +6,8 @@ use ProtocolCodeGenerator\Type\Type;
 
 class BlobType extends Type
 {
-    public function name()
+    public function __construct()
     {
-        return "blob";
-    }
-
-    public function fixedSize()
-    {
-        return null;
-    }
-
-    public function bounded()
-    {
-        return false;
+        parent::__construct("blob", null, false);
     }
 }

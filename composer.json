@@ -3,12 +3,17 @@
     "description": "A PHP library for protocol code generation and other functionalities.",
     "type": "library",
     "require": {
-        "php": ">=7.4"
+        "php": ">=8.0"
     },
     "autoload": {
         "psr-4": {
             "ProtocolCodeGenerator\\": "ProtocolCodeGenerator/",
             "Eolib\\": "Eolib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Eolib\\Tests\\": "Tests/Eolib/"
         }
     },
     "authors": [
@@ -44,11 +49,21 @@
         ],
         "dump-autoload": [
             "composer dump-autoload"
+        ],
+        "run-tests": [
+            "vendor/bin/phpunit --testdox"
+        ],
+        "test": [
+            "@generate-protocol",
+            "@run-tests"
         ]
     },
     "extra": {
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "10"
     }
 }

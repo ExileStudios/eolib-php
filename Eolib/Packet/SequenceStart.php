@@ -32,7 +32,7 @@ abstract class SequenceStart
  */
 class SimpleSequenceStart extends SequenceStart
 {
-    private $value;
+    private int $value;
 
     /**
      * Constructs a SimpleSequenceStart with a specified integer value.
@@ -97,8 +97,8 @@ class AccountReplySequenceStart extends SimpleSequenceStart
  */
 class InitSequenceStart extends SimpleSequenceStart
 {
-    private $seq1;
-    private $seq2;
+    private int $seq1;
+    private int $seq2;
 
     /**
      * Constructs an InitSequenceStart with specified initial values.
@@ -166,8 +166,8 @@ class InitSequenceStart extends SimpleSequenceStart
  */
 class PingSequenceStart extends SimpleSequenceStart
 {
-    private $seq1;
-    private $seq2;
+    private int $seq1;
+    private int $seq2;
 
     /**
      * Constructs a PingSequenceStart with specified initial values.

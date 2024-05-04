@@ -11,31 +11,33 @@ namespace Eolib\Data;
  * size of the respective type in the EO protocol. These limits are used
  * throughout the EO system to ensure data integrity and proper range checking.
  */
+class EoNumericLimits
+{
+    /**
+     * The maximum value that can be represented by a single byte (unsigned).
+     *
+     * @var int
+     */
+    const EO_CHAR_MAX = 253;
 
-/**
- * The maximum value that can be represented by a single byte (unsigned).
- *
- * @var int
- */
-const EO_CHAR_MAX = 253;
+    /**
+     * The maximum value that can be represented by two bytes (unsigned).
+     *
+     * @var int
+     */
+    const EO_SHORT_MAX = self::EO_CHAR_MAX * self::EO_CHAR_MAX;
 
-/**
- * The maximum value that can be represented by two bytes (unsigned).
- *
- * @var int
- */
-const EO_SHORT_MAX = EO_CHAR_MAX * EO_CHAR_MAX;
+    /**
+     * The maximum value that can be represented by three bytes (unsigned).
+     *
+     * @var int
+     */
+    const EO_THREE_MAX = self::EO_CHAR_MAX * self::EO_CHAR_MAX * self::EO_CHAR_MAX;
 
-/**
- * The maximum value that can be represented by three bytes (unsigned).
- *
- * @var int
- */
-const EO_THREE_MAX = EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX;
-
-/**
- * The maximum value that can be represented by four bytes (unsigned).
- *
- * @var int
- */
-const EO_INT_MAX = EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX * EO_CHAR_MAX;
+    /**
+     * The maximum value that can be represented by four bytes (unsigned).
+     *
+     * @var int
+     */
+    const EO_INT_MAX = self::EO_CHAR_MAX * self::EO_CHAR_MAX * self::EO_CHAR_MAX * self::EO_CHAR_MAX;
+}

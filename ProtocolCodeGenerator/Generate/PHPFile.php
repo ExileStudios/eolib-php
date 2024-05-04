@@ -31,7 +31,8 @@ class PHPFile {
      * @param string $rootPath The root path where the file will be saved, appended to the relative path.
      */
     public function write($rootPath) {
-        $outputPath = $rootPath . DIRECTORY_SEPARATOR . $this->relativePath;
+        $normalizedRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $this->relativePath);
+        $outputPath = $rootPath . DIRECTORY_SEPARATOR . $normalizedRelativePath;
     
         $header = new CodeBlock();
         $header->addLine("<?php");
@@ -57,9 +58,9 @@ class PHPFile {
         }
     
         // Calculate namespace based on the file path relative to the root path
-        $relativeNamespace = namespaceToPascalCase(str_replace('/', '\\', dirname($this->relativePath)));
+        $relativeNamespace = str_replace('/', '\\', dirname($this->relativePath));
         $pascalCaseNamespace = trim($relativeNamespace, '\\');
-        $namespace = "Eolib\\Protocol\\Generated" . (!empty($pascalCaseNamespace) && $pascalCaseNamespace != '.' ? "\\".$pascalCaseNamespace : "");
+        $namespace = "Eolib\\Protocol" . (!empty($pascalCaseNamespace) && $pascalCaseNamespace != '.' ? "\\".$pascalCaseNamespace : "");
     
         $header->setNamespace($namespace);
     

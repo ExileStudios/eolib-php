@@ -44,7 +44,7 @@ Here's an example of how to use the PacketFamily class from the library:
 
     require_once 'vendor/exilestudios/eolib-php-dist/vendor/autoload.php';
 
-    use Eolib\Protocol\Generated\Net\PacketFamily;
+    use Eolib\Protocol\Net\PacketFamily;
 
     // Access packet family constants
     echo PacketFamily::CONNECTION; // Output: 1

@@ -41,7 +41,7 @@ class Import {
                 array_shift($baseParts);
             }
 
-            $fromPackagePath = str_repeat('../', count($baseParts)) . implode('.', $absoluteParts);
+            $fromPackagePath = namespaceToPascalCase(str_repeat('../', count($baseParts)) . implode('.', $absoluteParts));
         }
 
         return "use {$fromPackagePath}\\{$this->importName};";
@@ -102,6 +102,15 @@ class CodeBlock {
     }
 
     /**
+     * Retrieves the lines of code in the block, which can be used for further processing or output.
+     *
+     * @return string[] The lines of code in the block.
+     */
+    public function getLines(): array {
+        return $this->lines;
+    }
+
+    /**
      * Sets the namespace for this code block, which will be prefixed to the generated code.
      *
      * @param string $namespace The namespace to set for this code block.
@@ -147,13 +156,13 @@ class CodeBlock {
     public function addImportByType($customType)
     {
         $namespacePath = str_replace('/', '\\', $customType->sourcePath());
-        $namespacePath = snakeCaseToPascalCase(trim($namespacePath, '\\'));
+        $namespacePath = trim($namespacePath, '\\');
 
         if (!empty($namespacePath)) {
             $namespacePath .= '\\';
         }
 
-        $fullNamespacePath = 'Eolib\\Protocol\\Generated';
+        $fullNamespacePath = 'Eolib\\Protocol';
         if (!empty($namespacePath)) {
             $fullNamespacePath .= '\\';
         }
@@ -227,7 +236,7 @@ class CodeBlock {
      * @return bool Returns true if the code block contains no significant content, otherwise false.
      */
     public function isEmpty() {
-        return count($this->lines) === 1 && strlen($this->lines[0]) === 0;
+        return count($this->lines) === 1 && mb_strlen($this->lines[0]) === 0;
     }
 
     /**

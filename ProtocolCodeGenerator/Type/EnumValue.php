@@ -4,21 +4,21 @@ namespace ProtocolCodeGenerator\Type;
 
 class EnumValue
 {
-    private $ordinalValue;
-    private $name;
+    private int $ordinalValue;
+    private string $name;
 
-    public function __construct($ordinalValue, $name)
+    public function __construct(int $ordinalValue, string $name)
     {
         $this->ordinalValue = $ordinalValue;
         $this->name = $name;
     }
 
-    public function ordinalValue()
+    public function ordinalValue(): int
     {
         return $this->ordinalValue;
     }
 
-    public function name()
+    public function name(): string
     {
         return $this->name;
     }

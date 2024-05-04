@@ -6,10 +6,10 @@ use ProtocolCodeGenerator\Generate\CodeBlock;
  * Generates a docstring based on the protocol comment and additional notes.
  *
  * @param string $protocolComment The protocol comment to include in the docstring.
- * @param array $notes Additional notes to include in the docstring.
+ * @param string[] $notes Additional notes to include in the docstring.
  * @return CodeBlock The generated docstring as a CodeBlock object.
  */
-function generateDocstring($protocolComment, $notes = [])
+function generateDocstring(string $protocolComment, $notes = []): CodeBlock
 {
     $lines = [];
     if ($protocolComment) {

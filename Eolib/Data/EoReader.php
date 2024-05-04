@@ -12,19 +12,20 @@ namespace Eolib\Data;
  * https://github.com/Cirras/eo-protocol/blob/master/docs/chunks.md
  */
 class EoReader {
-    private $data;
-    private $position = 0;
-    private $chunkedReadingMode = false;
-    private $chunkStart = 0;
-    private $nextBreak = -1;
+    /** @var int[] */
+    private array $data;
+    private int $position = 0;
+    private bool $chunkedReadingMode = false;
+    private int $chunkStart = 0;
+    private int $nextBreak = -1;
 
     /**
      * Creates a new EoReader instance for the specified data.
      *
-     * @param string $data The byte string containing the input data.
+     * @param int[] $data The byte string containing the input data.
      */
-    public function __construct($data) {
-        $this->data = array_values(unpack('C*', $data));
+    public function __construct(array $data) {
+        $this->data = $data;
     }
 
     /**
@@ -40,7 +41,7 @@ class EoReader {
      * @return EoReader The new reader.
      * @throws \ValueError If `index` or `length` is negative.
      */
-    public function slice($index = null, $length = null) {
+    public function slice($index = null, $length = null): EoReader {
         if ($index === null) {
             $index = $this->position;
         }
@@ -51,10 +52,8 @@ class EoReader {
         if ($index < 0 || $length < 0) {
             throw new \ValueError("Index or length cannot be negative: index $index, length $length");
         }
-
         $sliceData = array_slice($this->data, $index, $length);
-        $newReader = new self(pack('C*', ...$sliceData));
-        $newReader->resetChunkedReading();
+        $newReader = new self($sliceData);
 
         return $newReader;
     }
@@ -64,7 +63,7 @@ class EoReader {
      *
      * @return int A raw byte.
      */
-    public function getByte() {
+    public function getByte(): int {
         return $this->readByte();
     }
 
@@ -73,21 +72,22 @@ class EoReader {
      *
      * @return int A raw byte.
      */
-    private function readByte() {
+    private function readByte(): int {
         if ($this->getRemaining() > 0) {
             $byte = $this->data[$this->position++];
             return $byte;
         }
         return 0; // Indicate end of data
     }
+    
 
     /**
      * Reads an array of raw bytes from the input data.
      *
      * @param int $length The number of bytes to read.
-     * @return string An array of raw bytes.
+     * @return int[] An array of raw bytes.
      */
-    public function getBytes($length) {
+    public function getBytes($length): array {
         return $this->readBytes($length);
     }
 
@@ -95,13 +95,13 @@ class EoReader {
      * Internal method to read an array of raw bytes from the input data.
      *
      * @param int $length The number of bytes to read.
-     * @return string An array of raw bytes.
+     * @return int[] An array of raw bytes.
      */
-    private function readBytes($length) {
-        $length = min($length, $this->getRemaining());
-        $bytes = array_slice($this->data, $this->position, $length);
-        $this->position += $length;
-        return pack('C*', ...$bytes);
+    private function readBytes(int $length): array {
+        $actualLength = min($length, $this->getRemaining());
+        $bytes = array_slice($this->data, $this->position, $actualLength);
+        $this->position += $actualLength;
+        return $bytes;
     }
 
     /**
@@ -109,7 +109,7 @@ class EoReader {
      *
      * @return int A decoded 1-byte integer.
      */
-    public function getChar() {
+    public function getChar(): int {
         return NumberEncodingUtils::decodeNumber($this->readBytes(1));
     }
 
@@ -118,7 +118,7 @@ class EoReader {
      *
      * @return int A decoded 2-byte integer.
      */
-    public function getShort() {
+    public function getShort(): int {
         return NumberEncodingUtils::decodeNumber($this->readBytes(2));
     }
 
@@ -127,7 +127,7 @@ class EoReader {
      *
      * @return int A decoded 3-byte integer.
      */
-    public function getThree() {
+    public function getThree(): int {
         return NumberEncodingUtils::decodeNumber($this->readBytes(3));
     }
 
@@ -136,7 +136,7 @@ class EoReader {
      *
      * @return int A decoded 4-byte integer.
      */
-    public function getInt() {
+    public function getInt(): int {
         return NumberEncodingUtils::decodeNumber($this->readBytes(4));
     }
 
@@ -145,7 +145,7 @@ class EoReader {
      *
      * @return string A decoded string.
      */
-    public function getString() {
+    public function getString(): string {
         $bytes = $this->readBytes($this->getRemaining());
         return $this->decodeAnsi($bytes);
     }
@@ -158,7 +158,7 @@ class EoReader {
      * @return string A decoded string.
      * @throws \ValueError If the length is negative.
      */
-    public function getFixedString($length, $padded = false) {
+    public function getFixedString($length, $padded = false): string {
         if ($length < 0) {
             throw new \ValueError("Negative length");
         }
@@ -174,10 +174,10 @@ class EoReader {
      *
      * @return string A decoded string.
      */
-    public function getEncodedString() {
+    public function getEncodedString(): string {
         $bytes = $this->readBytes($this->getRemaining());
-        decodeString($bytes);
-        return $this->decodeAnsi($bytes);
+        $bytes = StringEncodingUtils::decodeString($bytes);
+        return $this->decodeAnsiString($bytes);
     }
 
     /**
@@ -188,12 +188,13 @@ class EoReader {
      * @return string A decoded string.
      * @throws \ValueError If the length is negative.
      */
-    public function getFixedEncodedString($length, $padded = false) {
+    public function getFixedEncodedString($length, $padded = false): string {
         if ($length < 0) {
             throw new \ValueError("Negative length");
         }
         $bytes = $this->readBytes($length);
-        decodeString($bytes);
+        $bytesString = StringEncodingUtils::decodeString($bytes);
+        $bytes = StringEncodingUtils::stringToBytes($bytesString);
         if ($padded) {
             $bytes = $this->removePadding($bytes);
         }
@@ -203,22 +204,40 @@ class EoReader {
     /**
      * Decodes windows-1252 bytes to a string.
      *
-     * @param string $bytes The sequence of bytes to decode.
+     * @param int[] $bytes The sequence of bytes to decode.
      * @return string The decoded string.
      */
-    private function decodeAnsi($bytes) {
-        return iconv('Windows-1252', 'UTF-8//IGNORE', $bytes);
+    private function decodeAnsi(array $bytes): string {
+        $byteString = pack('C*', ...$bytes);
+        $result = iconv('Windows-1252', 'UTF-8//IGNORE', $byteString);
+        return $result !== false ? $result : '';
     }
 
     /**
-     * Removes padding (trailing 0xFF bytes) from a sequence of bytes.
+     * Decodes a windows-1252 string to UTF-8.
      *
-     * @param string $bytes The sequence of bytes.
-     * @return string The bytes without padding.
+     * @param string $string The string to decode.
+     * @return string The decoded string.
      */
-    private function removePadding($bytes) {
-        $position = strpos($bytes, "\xFF");
-        return $position === false ? $bytes : substr($bytes, 0, $position);
+    private function decodeAnsiString(string $string): string {
+        $result = iconv('Windows-1252', 'UTF-8//IGNORE', $string);
+        return $result !== false ? $result : '';
+    }
+
+    /**
+     * Removes padding (trailing 0xFF or 0x00 bytes) from a sequence of bytes.
+     *
+     * @param int[] $bytes The sequence of bytes.
+     * @return int[] The bytes without padding.
+     */
+    private function removePadding(array $bytes): array {
+        $length = count($bytes);
+        for ($i = 0; $i < $length; $i++) {
+            if ($bytes[$i] === 0xFF) { //|| $bytes[$i] === 0x00
+                return array_slice($bytes, 0, $i);
+            }
+        }
+        return $bytes;  // Return the original array if no padding was found.
     }
 
     /**
@@ -226,7 +245,7 @@ class EoReader {
      * 
      * @return bool True if in chunked reading mode, false otherwise.
      */
-    public function isChunkedReadingMode() {
+    public function isChunkedReadingMode(): bool {
         return $this->chunkedReadingMode;
     }
 
@@ -235,8 +254,11 @@ class EoReader {
      * 
      * @param bool $value True to enable chunked reading mode, false to disable it.
      */
-    public function setChunkedReadingMode($value) {
+    public function setChunkedReadingMode($value): void {
         $this->chunkedReadingMode = $value;
+        if ($this->nextBreak === -1) {
+            $this->findNextBreakIndex();
+        }
     }
 
     /**
@@ -244,7 +266,7 @@ class EoReader {
      * 
      * @return int The current position.
      */
-    public function getPosition() {
+    public function getPosition(): int {
         return $this->position;
     }
 
@@ -253,9 +275,9 @@ class EoReader {
      *
      * @return int The number of bytes remaining.
      */
-    public function getRemaining() {
+    public function getRemaining(): int {
         if ($this->chunkedReadingMode) {
-            return $this->nextBreak - $this->position;
+            return $this->nextBreak - min($this->position, $this->nextBreak);
         }
         return count($this->data) - $this->position;
     }
@@ -265,7 +287,7 @@ class EoReader {
      *
      * @throws \RuntimeException If not in chunked reading mode.
      */
-    public function nextChunk() {
+    public function nextChunk(): void {
         if (!$this->chunkedReadingMode) {
             throw new \RuntimeException("Not in chunked reading mode");
         }
@@ -274,7 +296,6 @@ class EoReader {
         if ($this->position < count($this->data)) {
             $this->position++; // Skip the break byte
         }
-
         $this->chunkStart = $this->position;
         $this->findNextBreakIndex();
     }
@@ -282,7 +303,7 @@ class EoReader {
     /**
      * Finds the index of the next break byte (0xFF) in the input data.
      */
-    private function findNextBreakIndex() {
+    private function findNextBreakIndex(): void {
         for ($i = $this->chunkStart; $i < count($this->data); $i++) {
             if ($this->data[$i] === 0xFF) {
                 $this->nextBreak = $i;

@@ -2,22 +2,40 @@
 
 namespace ProtocolCodeGenerator\Type;
 
+use SimpleXMLElement;
+use ProtocolCodeGenerator\Type\Type;
+use ProtocolCodeGenerator\Type\Length;
 use ProtocolCodeGenerator\Type\BlobType;
 use ProtocolCodeGenerator\Type\BoolType;
 use ProtocolCodeGenerator\Type\EnumType;
 use ProtocolCodeGenerator\Type\EnumValue;
-use ProtocolCodeGenerator\Type\HasUnderlyingType;
-use ProtocolCodeGenerator\Type\IntegerType;
-use ProtocolCodeGenerator\Type\Length;
 use ProtocolCodeGenerator\Type\StringType;
 use ProtocolCodeGenerator\Type\StructType;
+use ProtocolCodeGenerator\Type\IntegerType;
+use ProtocolCodeGenerator\Type\HasUnderlyingType;
 
+/**
+ * A factory for creating types.
+ */
 class TypeFactory
 {
+    /**
+     * @var UnresolvedCustomType[]
+     */
     private $unresolvedTypes = [];
+    /**
+     * @var Type[]|null[]
+     */
     private $types = [];
 
-    public function getType(string $name, $length = null)
+    /**
+     * Returns the type with the specified name and length.
+     *
+     * @param string $name The name of the type.
+     * @param Length|null $length The length of the type.
+     * @return Type The type with the specified name and length.
+     */
+    public function getType(string $name, ?Length $length = null): Type
     {
         if (!$length) {
             $length = Length::unspecified();
@@ -31,27 +49,42 @@ class TypeFactory
         return $this->types[$name];
     }
 
-    public function defineCustomType($protocolType, $sourcePath)
+    /**
+     * Defines a custom type from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to define the custom type from.
+     * @param string $sourcePath The path to the source file containing the XML element.
+     * @return bool Whether the custom type was defined.
+     */
+    public function defineCustomType(SimpleXMLElement $xmlElement, string $sourcePath): bool
     {
-        $name = (string)$protocolType['name'];
+        $name = (string)$xmlElement['name'];
         if (isset($this->unresolvedTypes[$name])) {
             return false;
         }
-        $this->unresolvedTypes[$name] = new UnresolvedCustomType($protocolType, $sourcePath);
+        $this->unresolvedTypes[$name] = new UnresolvedCustomType($xmlElement, $sourcePath);
         return true;
     }
 
-    public function clear()
+    /**
+     * Clears the type factory.
+     */
+    public function clear(): void
     {
         $this->unresolvedTypes = [];
         $this->types = [];
     }
 
-    private function createType($name, $length)
+    /**
+     * Returns the names of the unresolved custom types.
+     *
+     * @return Type The names of the unresolved custom types.
+     */
+    private function createType(string $name, Length $length): Type
     {
         $underlyingType = $this->readUnderlyingType($name);
         if ($underlyingType !== null) {
-            $name = substr($name, 0, strpos($name, ":"));
+            $name = substr($name, 0, (int)strpos($name, ":"));
         }
 
         $result = null;
@@ -73,12 +106,13 @@ class TypeFactory
         } elseif ($name === "blob") {
             $result = new BlobType();
         } else {
+            echo "Creating custom type: {$name}\n";
             $result = $this->createCustomType($name, $underlyingType);
         }
 
         if ($underlyingType !== null && !($result instanceof HasUnderlyingType)) {
             throw new \RuntimeException(
-                "{$result->name} has no underlying type, so {$underlyingType->name} is not allowed "
+                "{$result->name()} has no underlying type, so {$underlyingType->name()} is not allowed "
                 . "as an underlying type override."
             );
         }
@@ -86,7 +120,13 @@ class TypeFactory
         return $result;
     }
 
-    private function readUnderlyingType($name)
+    /**
+     * Reads the underlying type from the specified type name.
+     *
+     * @param string $name The name of the type.
+     * @return Type|null The underlying type, or null if the type has no underlying type.
+     */
+    private function readUnderlyingType(string $name): ?Type
     {
         $parts = explode(":", $name);
 
@@ -100,7 +140,7 @@ class TypeFactory
             $underlyingType = $this->getType($underlyingTypeName);
             if (!($underlyingType instanceof IntegerType)) {
                 throw new \RuntimeException(
-                    "{$underlyingType->name} is not a numeric type, so it cannot be specified as "
+                    "{$underlyingType->name()} is not a numeric type, so it cannot be specified as "
                     . "an underlying type."
                 );
             }
@@ -110,7 +150,14 @@ class TypeFactory
         }
     }
 
-    private function createCustomType($name, $underlyingTypeOverride)
+    /**
+     * Creates a custom type from the specified XML element.
+     *
+     * @param string $name The name of the custom type.
+     * @param Type|null $underlyingTypeOverride The underlying type override, if any.
+     * @return Type The custom type.
+     */
+    private function createCustomType(string $name, ?Type $underlyingTypeOverride): Type
     {
         $unresolvedType = $this->unresolvedTypes[$name] ?? null;
         if (!$unresolvedType) {
@@ -130,13 +177,21 @@ class TypeFactory
         }
     }
 
-    private function createEnumType($protocolEnum, $underlyingTypeOverride, $relativePath)
+    /**
+     * Creates an enum type from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to create the enum type from.
+     * @param Type|null $underlyingTypeOverride The underlying type override, if any.
+     * @param string $relativePath The relative path to the source file containing the XML element.
+     * @return EnumType The enum type.
+     */
+    private function createEnumType(SimpleXMLElement $xmlElement, ?Type $underlyingTypeOverride, string $relativePath): EnumType
     {
         $underlyingType = $underlyingTypeOverride;
-        $enumName = (string)$protocolEnum['name'];
+        $enumName = (string)$xmlElement['name'];
 
         if ($underlyingType === null) {
-            $underlyingTypeName = (string)$protocolEnum['type'];
+            $underlyingTypeName = (string)$xmlElement['type'];
             if ($enumName === $underlyingTypeName) {
                 throw new \RuntimeException("{$enumName} type cannot specify itself as an underlying type.");
             }
@@ -144,14 +199,14 @@ class TypeFactory
             $defaultUnderlyingType = $this->getType($underlyingTypeName);
             if (!($defaultUnderlyingType instanceof IntegerType)) {
                 throw new \RuntimeException(
-                    "{$defaultUnderlyingType->name} is not a numeric type, so it cannot be "
+                    "{$defaultUnderlyingType->name()} is not a numeric type, so it cannot be "
                     . "specified as an underlying type."
                 );
             }
 
             $underlyingType = $defaultUnderlyingType;
         }
-        $protocolValues = $protocolEnum->value;
+        $protocolValues = $xmlElement->value;
 
         $values = [];
         $ordinals = [];
@@ -178,20 +233,34 @@ class TypeFactory
         return new EnumType($enumName, $relativePath, $underlyingType, $values);
     }
 
-    private function createStructType($protocolStruct, $relativePath)
+    /**
+     * Creates a struct type from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to create the struct type from.
+     * @param string $relativePath The relative path to the source file containing the XML element.
+     * @return StructType The struct type.
+     */
+    private function createStructType(SimpleXMLElement $xmlElement, string $relativePath): StructType
     {
+        echo "Creating struct type: {$xmlElement['name']}\n";
         return new StructType(
-            (string)$protocolStruct['name'],
-            $this->calculateFixedStructSize($protocolStruct),
-            $this->isBounded($protocolStruct),
+            (string)$xmlElement['name'],
+            $this->calculateFixedStructSize($xmlElement),
+            $this->isBounded($xmlElement),
             $relativePath
         );
     }
 
-    private function calculateFixedStructSize($protocolStruct)
+    /**
+     * Calculates the fixed size of a struct from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to calculate the fixed size from.
+     * @return int|null The fixed size of the struct, or null if the struct is not fixed-size.
+     */
+    private function calculateFixedStructSize(SimpleXMLElement $xmlElement): ?int
     {
         $size = 0;
-        foreach (self::flattenInstructions($protocolStruct) as $instruction) {
+        foreach (self::flattenInstructions($xmlElement) as $instruction) {
             $instructionSize = 0;
             if ($instruction->getName() === "field") {
                 $instructionSize = $this->calculateFixedStructFieldSize($instruction);
@@ -214,13 +283,19 @@ class TypeFactory
             $size += $instructionSize;
         }
 
-        return $size;
+        return (int)$size;
     }
 
-    private function calculateFixedStructFieldSize($protocolField)
+    /**
+     * Calculates the fixed size of a field from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to calculate the fixed size from.
+     * @return int|null The fixed size of the field, or null if the field is not fixed-size.
+     */
+    private function calculateFixedStructFieldSize(SimpleXMLElement $xmlElement): ?int
     {
-        $typeName = (string)$protocolField['type'];
-        $typeLength = self::createTypeLengthForField($protocolField);
+        $typeName = (string)$xmlElement['type'];
+        $typeLength = self::createTypeLengthForField($xmlElement);
         $typeInstance = $this->getType($typeName, $typeLength);
         $fieldSize = $typeInstance->fixedSize();
         $fieldSizeInt = is_numeric($fieldSize) ? intval($fieldSize) : null;
@@ -230,7 +305,7 @@ class TypeFactory
             return null;
         }
 
-        if ($protocolField['optional']) {
+        if ($xmlElement['optional']) {
             // Nothing can be optional in a fixed-size struct
             return null;
         }
@@ -238,9 +313,15 @@ class TypeFactory
         return $fieldSize;
     }
 
-    private function calculateFixedStructArraySize($protocolArray)
+    /**
+     * Calculates the fixed size of an array from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to calculate the fixed size from.
+     * @return int|null The fixed size of the array, or null if the array is not fixed-size.
+     */
+    private function calculateFixedStructArraySize(SimpleXMLElement $xmlElement): ?int
     {
-        $lengthString = (string)$protocolArray['length'];
+        $lengthString = (string)$xmlElement['length'];
         $length = is_numeric($lengthString) ? intval($lengthString) : null;
 
         if ($length === null) {
@@ -248,7 +329,7 @@ class TypeFactory
             return null;
         }
 
-        $typeName = (string)$protocolArray['type'];
+        $typeName = (string)$xmlElement['type'];
         $typeInstance = $this->getType($typeName);
 
         $elementSize = $typeInstance->fixedSize();
@@ -259,24 +340,30 @@ class TypeFactory
             return null;
         }
 
-        if ($protocolArray['optional']) {
+        if ($xmlElement['optional']) {
             // Nothing can be optional in a fixed-size struct
             return null;
         }
 
-        if ($protocolArray['delimited']) {
+        if ($xmlElement['delimited']) {
             // It's possible to omit data or insert garbage data at the end of each chunk
             return null;
         }
 
-        return $length * $elementSize;
+        return (int)($length * $elementSize);
     }
 
-    private function calculateFixedStructDummySize($protocolDummy)
+    /**
+     * Calculates the fixed size of a dummy field from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to calculate the fixed size from.
+     * @return int|null The fixed size of the dummy field, or null if the dummy field is not fixed-size.
+     */
+    private function calculateFixedStructDummySize(SimpleXMLElement $xmlElement): ?int
     {
-        $typeName = (string)$protocolDummy['type'];
+        $typeName = (string)$xmlElement['type'];
         $typeInstance = $this->getType($typeName);
-        $dummySize = $typeInstance->fixedSize;
+        $dummySize = $typeInstance->fixedSize();
 
         if ($dummySize === null) {
             // All dummy fields in a fixed-size struct must also be fixed-size
@@ -286,11 +373,17 @@ class TypeFactory
         return $dummySize;
     }
 
-    private function isBounded($protocolStruct)
+    /**
+     * Determines whether the specified XML element is bounded.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to determine whether it is bounded.
+     * @return bool Whether the XML element is bounded.
+     */
+    private function isBounded(SimpleXMLElement $xmlElement): bool
     {
         $result = true;
 
-        foreach (self::flattenInstructions($protocolStruct) as $instruction) {
+        foreach (self::flattenInstructions($xmlElement) as $instruction) {
             if (!$result) {
                 $result = $instruction->getName() === "break";
                 continue;
@@ -315,13 +408,20 @@ class TypeFactory
         return $result;
     }
 
-    private static function flattenInstructions($element, $result = null)
+    /**
+    * Flattens the instructions from a SimpleXMLElement into a single array.
+    *
+    * @param SimpleXMLElement $xmlElement The XML element to process.
+    * @param SimpleXMLElement[]|null $result The array to which the results are added.
+    * @return SimpleXMLElement[] The flattened list of instructions.
+    */
+    private static function flattenInstructions(SimpleXMLElement $xmlElement, ?array $result = null): array
     {
         if ($result === null) {
             $result = [];
         }
 
-        foreach ($element->children() as $instruction) {
+        foreach ($xmlElement->children() as $instruction) {
             $result[] = $instruction;
 
             if ($instruction->getName() === "chunked") {
@@ -341,17 +441,30 @@ class TypeFactory
         return $result;
     }
 
-    private static function createTypeLengthForField($protocolField)
+    /**
+     * Creates a Length object for a field from the specified XML element.
+     *
+     * @param SimpleXMLElement $xmlElement The XML element to create the Length object from.
+     * @return Length The Length object.
+     */
+    private static function createTypeLengthForField(SimpleXMLElement $xmlElement): Length
     {
-        $lengthString = (string)$protocolField['length'];
-        if ($lengthString !== null) {
+        $lengthString = (string)$xmlElement['length'];
+        if ($lengthString != null) {
             return Length::fromString($lengthString);
         } else {
             return Length::unspecified();
         }
     }
 
-    private static function createTypeWithSpecifiedLength($name, $length)
+    /**
+     * Creates a type with the specified name and length.
+     *
+     * @param string $name The name of the type.
+     * @param Length $length The length of the type.
+     * @return Type The type with the specified name and length.
+     */
+    private static function createTypeWithSpecifiedLength(string $name, Length $length): Type
     {
         if (in_array($name, ["string", "encoded_string"])) {
             return new StringType($name, $length);
@@ -364,23 +477,42 @@ class TypeFactory
     }
 }
 
+/**
+ * Represents an unresolved custom type.
+ */
 class UnresolvedCustomType
 {
-    private $typeXml;
-    private $relativePath;
+    private SimpleXMLElement $typeXml;
+    private string $relativePath;
 
-    public function __construct($typeXml, $relativePath)
+    /**
+     * Creates a new UnresolvedCustomType instance.
+     *
+     * @param SimpleXMLElement $typeXml The XML element representing the unresolved custom type.
+     * @param string $relativePath The relative path to the source file containing the XML element.
+     */
+    public function __construct(SimpleXMLElement $typeXml, string $relativePath)
     {
         $this->typeXml = $typeXml;
         $this->relativePath = $relativePath;
     }
 
-    public function getTypeXml()
+    /**
+     * Returns the XML element representing the unresolved custom type.
+     *
+     * @return SimpleXMLElement The XML element representing the unresolved custom type.
+     */
+    public function getTypeXml(): SimpleXMLElement
     {
         return $this->typeXml;
     }
 
-    public function getRelativePath()
+    /**
+     * Returns the relative path to the source file containing the XML element.
+     *
+     * @return string The relative path to the source file containing the XML element.
+     */
+    public function getRelativePath(): string
     {
         return $this->relativePath;
     }

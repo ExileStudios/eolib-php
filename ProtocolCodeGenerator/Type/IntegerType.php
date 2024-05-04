@@ -4,29 +4,17 @@ namespace ProtocolCodeGenerator\Type;
 
 use ProtocolCodeGenerator\Type\BasicType;
 
+/**
+ * IntegerType represents a type that is an integer.
+ */
 class IntegerType extends BasicType
 {
-    private $name;
-    private $size;
-
-    public function __construct($name, $size)
+    /**
+     * @param string $name
+     * @param int|null $fixedSize
+     */
+    public function __construct(string $name, ?int $fixedSize)
     {
-        $this->name = $name;
-        $this->size = $size;
-    }
-
-    public function name()
-    {
-        return $this->name;
-    }
-
-    public function fixedSize()
-    {
-        return $this->size;
-    }
-
-    public function bounded()
-    {
-        return true;
+        parent::__construct($name, $fixedSize, true);
     }
 }

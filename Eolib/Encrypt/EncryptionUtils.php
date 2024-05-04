@@ -4,7 +4,7 @@
  * Interleaves a sequence of bytes. When encrypting EO data, bytes are "woven" into each other.
  * This is an in-place operation.
  *
- * @param array $data Reference to the data to interleave.
+ * @param int[] $data Reference to the data to interleave.
  */
 function interleave(array &$data): void
 {
@@ -37,7 +37,7 @@ function interleave(array &$data): void
  * Deinterleaves a sequence of bytes. This is the reverse of interleave.
  * This is an in-place operation.
  *
- * @param array $data Reference to the data to deinterleave.
+ * @param int[] $data Reference to the data to deinterleave.
  */
 function deinterleave(array &$data): void
 {
@@ -70,7 +70,7 @@ function deinterleave(array &$data): void
  * Flips the most significant bits of each byte in a sequence of bytes.
  * Values 0 and 128 are not flipped.
  *
- * @param array $data Reference to the data to flip MSB on.
+ * @param int[] $data Reference to the data to flip MSB on.
  */
 function flipMsb(array &$data): void
 {
@@ -84,7 +84,7 @@ function flipMsb(array &$data): void
 /**
  * Swaps the order of contiguous bytes in a sequence that are divisible by a given multiple value.
  *
- * @param array $data Reference to the data to swap bytes in.
+ * @param int[] $data Reference to the data to swap bytes in.
  * @param int $multiple The multiple value.
  */
 function swapMultiples(array &$data, int $multiple): void

@@ -77,9 +77,9 @@ class FieldCodeGenerator
         $this->typeFactory = $typeFactory;
         $this->context = $context;
         $this->data = $data;
-        $this->name = snakeCaseToCamelCase($name);
+        $this->name = $name !== null ? snakeCaseToCamelCase($name) : null;
         $this->typeString = $typeString;
-        $this->lengthString = snakeCaseToCamelCase($lengthString);
+        $this->lengthString = $lengthString;
         $this->padded = $padded;
         $this->optional = $optional;
         $this->hardcodedValue = $hardcodedValue;
@@ -179,7 +179,7 @@ class FieldCodeGenerator
             $fieldType = $this->getType();
             if (!($fieldType instanceof IntegerType)) {
                 throw new \RuntimeException(
-                    "{$fieldType->name} is not a numeric type, "
+                    "{$fieldType->name()} is not a numeric type, "
                     . "so it is not allowed for a length field."
                 );
             }
@@ -221,8 +221,8 @@ class FieldCodeGenerator
         $fieldType = $this->getType();
 
         if ($fieldType instanceof StringType) {
-            $length = tryCastInt($this->lengthString);
-            if ($length !== null && $length != strlen($this->hardcodedValue)) {
+            $length = $this->lengthString !== null ? tryCastInt($this->lengthString) : null;
+            if ($length !== null && $length != mb_strlen($this->hardcodedValue)) {
                 throw new \RuntimeException(
                     "Expected length of {$length} for hardcoded string value "
                     . "'{$this->hardcodedValue}'."
@@ -327,16 +327,23 @@ class FieldCodeGenerator
 
         $typeName = $this->getPHPTypeName($fieldType);
         if ($this->arrayField) {
+            $docTypeName = "{$typeName}[]";
             $typeName = "array";
+        } else {
+            $docTypeName = $typeName;
         }
 
         if ($this->optional) {
-            $typeName = "?{$typeName}";
+            $typeName = "?{$docTypeName}";
         }
 
         $this->hardcodedValue = trim($this->hardcodedValue);
+        $accessLevel = 'private';
         if ($this->hardcodedValue === null) {
             $initializer = null;
+        } elseif ($this->arrayField) {
+            $initializer = "[]";
+            $accessLevel = 'public';
         } elseif ($fieldType instanceof StringType) {
             $initializer = "\"{$this->hardcodedValue}\"";
         } else {
@@ -350,8 +357,9 @@ class FieldCodeGenerator
             $this->arrayField
         );
 
+        $this->data->fields->addLine("/** @var {$docTypeName} */");
         $this->data->fields->addLine(
-            "private {$typeName} \${$this->name}" . (!empty($initializer) ? " = {$initializer};" : ";")
+            "{$accessLevel} {$typeName} \${$this->name}" . (!empty($initializer) ? " = {$initializer};" : ";")
         );
 
         if ($fieldType instanceof CustomType) {
@@ -370,7 +378,8 @@ class FieldCodeGenerator
         if (!empty($docstring->lines)) {
             $getter->addCodeBlock($docstring);
         }
-        $getter->addLine("public function {$getterName}(): {$typeName}")
+        $getter->addLine("/** @return {$docTypeName} */")
+            ->addLine("public function {$getterName}(): {$typeName}")
             ->addLine("{")
             ->indent()
             ->addLine("return \$this->{$this->name};")
@@ -386,7 +395,10 @@ class FieldCodeGenerator
             if (!empty($docstring->lines)) {
                 $setter->addCodeBlock($docstring);
             }
-            $setter->addLine("public function {$setterName}({$typeName} \${$this->name}): void")
+            $nameLengthGetter = new CodeBlock();
+            $nameLengthSetter = new CodeBlock();
+            $setter->addLine("/** @param {$docTypeName} \${$this->name} */")
+                ->addLine("public function {$setterName}({$typeName} \${$this->name}): void")
                 ->addLine("{")
                 ->indent()
                 ->addLine("\$this->{$this->name} = \${$this->name};");
@@ -394,11 +406,43 @@ class FieldCodeGenerator
             if (isset($this->context->lengthFieldIsReferencedMap[$this->lengthString])) {
                 $this->context->lengthFieldIsReferencedMap[$this->lengthString] = true;
                 $lengthFieldData = $this->context->accessibleFields[$this->lengthString];
-                $setter->addLine("\$this->{$lengthFieldData->name} = strlen(\$this->{$this->name});");
+            
+                $fieldLines = $this->data->fields->getLines();
+                $isArray = false;
+                foreach ($fieldLines as $line) {
+                    if (strpos($line, "public array \${$this->name}") !== false) {
+                        $isArray = true;
+                        break;
+                    }
+                }
+            
+                if ($isArray) {
+                    $setter->addLine("\$this->{$lengthFieldData->name} = count(\$this->{$this->name});");
+                } else {
+                    $setter->addLine("\$this->{$lengthFieldData->name} = mb_strlen(\$this->{$this->name});");
+                }
+
+                $nameLengthGetter->addLine("/** @return int */")
+                    ->addLine("public function get".ucfirst($lengthFieldData->name)."(): int")
+                    ->addLine("{")
+                    ->indent()
+                    ->addLine("return \$this->{$lengthFieldData->name};")
+                    ->unindent()
+                    ->addLine("}");
+
+                $nameLengthSetter->addLine("/** @param int \${$lengthFieldData->name} */")
+                    ->addLine("public function set".ucfirst($lengthFieldData->name)."(int \${$lengthFieldData->name}): void")
+                    ->addLine("{")
+                    ->indent()
+                    ->addLine("\$this->{$lengthFieldData->name} = \${$lengthFieldData->name};")
+                    ->unindent()
+                    ->addLine("}");
             }
 
             $setter->unindent()->addLine("}");
             $this->data->addMethod($setter);
+            $this->data->addMethod($nameLengthGetter);
+            $this->data->addMethod($nameLengthSetter);
         }
 
         $deprecated = DeprecatedFields::getDeprecatedField($this->data->className, $this->name);
@@ -479,7 +523,7 @@ class FieldCodeGenerator
     public function generateDeserialize()
     {
         if ($this->optional) {
-            $this->data->deserialize->beginControlFlow("if (\$reader->remaining() > 0)");
+            $this->data->deserialize->beginControlFlow("if (\$reader->getRemaining() > 0)");
         }
 
         if ($this->arrayField) {
@@ -524,7 +568,7 @@ class FieldCodeGenerator
             $notes[] = "{$valueDescription} range is 0-" . getMaxValueOf($fieldType) . ".";
         }
 
-        return generateDocstring($this->comment, $notes);
+        return generateDocstring($this->comment !== null ? $this->comment : "", $notes);
     }
 
     /**
@@ -555,7 +599,7 @@ class FieldCodeGenerator
             return;
         }
 
-        $this->data->serialize->beginControlFlow("if (\$data->{$this->name} === null)");
+        $this->data->serialize->beginControlFlow("if (\$data->get".ucfirst($this->name)."() == null)");
         $this->data->serialize->addLine("throw new SerializationError('{$this->name} must be provided.');");
         $this->data->serialize->endControlFlow();
         $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol");
@@ -577,27 +621,39 @@ class FieldCodeGenerator
         } else {
             $lengthExpression = $this->lengthString;
         }
- 
+
         if ($lengthExpression === null) {
             return;
         }
- 
+
         $variableSize = $this->padded || $fieldData !== null;
         $lengthCheckOperator = $variableSize ? ">" : "!=";
         $expectedLengthDescription = $variableSize
             ? "{$lengthExpression} or less"
             : "exactly {$lengthExpression}";
+
+        $fieldLines = $this->data->fields->getLines();
+        $isArray = false;
+        foreach ($fieldLines as $line) {
+            if (strpos($line, "public array \${$this->name}") !== false) {
+                $isArray = true;
+                break;
+            }
+        }
+
+        $lengthFunction = $isArray ? "count" : "strlen";
         $errorMessage = "Expected length of "
             . $this->name
             . " to be "
             . $expectedLengthDescription
-            . ", got {strlen(\$data->{$this->name})}.";
- 
+            . ", got \" . " . $lengthFunction . "(\$data->{$this->name}) . \".";
+
         $this->data->serialize->beginControlFlow(
-            "if (strlen(\$data->{$this->name}) {$lengthCheckOperator} {$lengthExpression})"
+            "if (" . $lengthFunction . "(\$data->{$this->name}) {$lengthCheckOperator} {$lengthExpression})"
         );
         $this->data->serialize->addLine("throw new SerializationError(\"{$errorMessage}\");");
         $this->data->serialize->endControlFlow();
+
         $this->data->serialize->addImport("SerializationError", "Eolib\\Protocol");
     }
     
@@ -609,53 +665,50 @@ class FieldCodeGenerator
      */
     public function getWriteStatement()
     {
-       $realType = $this->getType();
-       $type = $realType;
+        $realType = $this->getType();
+        $type = $realType;
 
-       if ($type instanceof HasUnderlyingType) {
-           $type = $type->underlyingType();
-       }
+        if ($type instanceof HasUnderlyingType) {
+            $type = $type->underlyingType();
+        }
 
-       $valueExpression = $this->getWriteValueExpression();
+        $valueExpression = $this->getWriteValueExpression();
 
-       if ($realType instanceof BoolType) {
-           $valueExpression = "{$valueExpression} ? 1 : 0";
-       }
+        if ($realType instanceof EnumType || $realType instanceof BoolType) {
+            $valueExpression = "(int) {$valueExpression}";
+        }
 
-       if ($realType instanceof EnumType) {
-           $valueExpression = "(int) {$valueExpression}";
-       }
+        $offsetExpression = $this->getLengthOffsetExpression(-$this->offset);
+        if ($offsetExpression !== null) {
+            $valueExpression .= $offsetExpression;
+        }
 
-       $offsetExpression = $this->getLengthOffsetExpression(-$this->offset);
-       if ($offsetExpression !== null) {
-           $valueExpression .= $offsetExpression;
-       }
+        $result = new CodeBlock();
 
-       $result = new CodeBlock();
+        if ($type instanceof BasicType) {
+            $lengthExpression = $this->arrayField ? null : $this->getLengthExpression();
+            $writeStatement = $this->getWriteStatementForBasicType(
+                $type,
+                $valueExpression,
+                $lengthExpression,
+                $this->padded
+            );
+            $result->addLine($writeStatement);
+        } elseif ($type instanceof BlobType) {
+            $result->addLine("\$writer->addBytes(StringEncodingUtils::stringToBytes({$valueExpression}));");
+            $result->addImport("StringEncodingUtils", "Eolib\\Data");
+        } elseif ($type instanceof StructType) {
+            $result->addLine("{$type->name()}::serialize(\$writer, {$valueExpression});");
+            $result->addImportByType($type);
+        } else {
+            throw new \AssertionError("Unhandled Type");
+        }
 
-       if ($type instanceof BasicType) {
-           $lengthExpression = $this->arrayField ? null : $this->getLengthExpression();
-           $writeStatement = $this->getWriteStatementForBasicType(
-               $type,
-               $valueExpression,
-               $lengthExpression,
-               $this->padded
-           );
-           $result->addLine($writeStatement);
-       } elseif ($type instanceof BlobType) {
-           $result->addLine("\$writer->addBytes({$valueExpression});");
-       } elseif ($type instanceof StructType) {
-           $result->addLine("{$type->name()}::serialize(\$writer, {$valueExpression});");
-           $result->addImportByType($type);
-       } else {
-           throw new \AssertionError("Unhandled Type");
-       }
+        if ($this->optional) {
+            $result->addImport("cast", "typing");
+        }
 
-       if ($this->optional) {
-           $result->addImport("cast", "typing");
-       }
-
-       return $result;
+        return $result;
     }
 
     /**
@@ -685,7 +738,7 @@ class FieldCodeGenerator
                 throw new \AssertionError("Unhandled BasicType");
             }
         } else {
-            $fieldReference = "\$data->{$this->name}";
+            $fieldReference = "\$data->get".ucfirst($this->name)."()";
             if ($this->arrayField) {
                 $fieldReference .= "[\$i]";
             }
@@ -744,7 +797,7 @@ class FieldCodeGenerator
             if ($elementSize !== null) {
                 $arrayLengthVariableName = "\${$this->name}_length";
                 $this->data->deserialize->addLine(
-                    "{$arrayLengthVariableName} = (int) \$reader->remaining() / {$elementSize};"
+                    "{$arrayLengthVariableName} = (int) \$reader->getRemaining() / {$elementSize};"
                 );
                 $arrayLengthExpression = $arrayLengthVariableName;
             }
@@ -753,7 +806,7 @@ class FieldCodeGenerator
         $this->data->deserialize->addLine("\$data->{$this->name} = [];");
 
         if ($arrayLengthExpression === null) {
-            $this->data->deserialize->beginControlFlow("while (\$reader->remaining() > 0)");
+            $this->data->deserialize->beginControlFlow("while (\$reader->getRemaining() > 0)");
         } else {
             $this->data->deserialize->beginControlFlow("for (\$i = 0; \$i < {$arrayLengthExpression}; \$i++)");
         }
@@ -794,7 +847,7 @@ class FieldCodeGenerator
         if ($this->arrayField) {
             $statement->add("\$data->{$this->name}[] = ");
         } elseif ($this->name !== null) {
-            $statement->add("\$data->{$this->name} = ");
+            $statement->add("\$data->set".ucfirst($this->name)."(");
         }
 
         if ($type instanceof BasicType) {
@@ -813,18 +866,22 @@ class FieldCodeGenerator
             if ($realType instanceof BoolType) {
                 $statement->add("{$readBasicType} !== 0");
             } elseif ($realType instanceof EnumType) {
-                $statement->add("{$realType->name()}({$readBasicType})");
+                $statement->add("{$readBasicType}");
             } else {
                 $statement->add($readBasicType);
             }
         } elseif ($type instanceof BlobType) {
-            $statement->add("\$reader->getBytes(\$reader->remaining())");
+            $statement->add("StringEncodingUtils::bytesToString(\$reader->getBytes(\$reader->getRemaining()))");
+            $statement->addImport("StringEncodingUtils", "Eolib\\Data");
         } elseif ($type instanceof StructType) {
             $statement->add("{$type->name()}::deserialize(\$reader)")->addImportByType($type);
         } else {
             throw new \AssertionError("Unhandled Type");
         }
 
+        if (!$this->arrayField && $this->name !== null) {
+            $statement->add(")");
+        }
         return $statement->add(";");
     }
 
@@ -845,7 +902,7 @@ class FieldCodeGenerator
             if ($fieldData === null) {
                 throw new \RuntimeException("Referenced {$expression} field is not accessible.");
             }
-            $expression = "\$data->{$expression}";
+            $expression = "\$data->get".ucfirst($expression)."()";
         }
 
         return $expression;

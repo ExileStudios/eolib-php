@@ -6,9 +6,13 @@
  * @param string $name The PascalCase string to convert.
  * @return string The string converted to snake_case.
  */
-function pascalCaseToSnakeCase($name)
+function pascalCaseToSnakeCase(string $name): string
 {
-    return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $name));
+    $name = preg_replace('/(?<!^)[A-Z]/', '_$0', $name);
+    if ($name === null) {
+        return '';
+    }
+    return strtolower($name);
 }
 
 /**
@@ -17,7 +21,7 @@ function pascalCaseToSnakeCase($name)
  * @param string $name The snake_case string to convert.
  * @return string The string converted to PascalCase.
  */
-function snakeCaseToPascalCase($name)
+function snakeCaseToPascalCase(string $name): string
 {
     return str_replace(' ', '', ucwords(str_replace('_', ' ', strtolower($name))));
 }
@@ -28,9 +32,13 @@ function snakeCaseToPascalCase($name)
  * @param string $name The camelCase string to convert.
  * @return string The string converted to snake_case.
  */
-function camelCaseToSnakeCase($name)
+function camelCaseToSnakeCase(string $name): string
 {
-    return strtolower(preg_replace('/[A-Z]/', '_$0', lcfirst($name)));
+    $name = preg_replace('/[A-Z]/', '_$0', lcfirst($name));
+    if ($name === null) {
+        return '';
+    }
+    return strtolower($name);
 }
 
 /**
@@ -39,7 +47,7 @@ function camelCaseToSnakeCase($name)
  * @param string $name The camelCase string to convert.
  * @return string The string converted to PascalCase.
  */
-function camelCaseToPascalCase($name)
+function camelCaseToPascalCase(string $name): string
 {
     return ucfirst($name);
 }
@@ -47,24 +55,33 @@ function camelCaseToPascalCase($name)
 /**
  * Converts a snake_case string to camelCase.
  *
- * @param string|null $name The snake_case string to convert.
- * @return string|null The string converted to camelCase or null if input is null.
+ * @param string $name The snake_case string to convert.
+ * @return string The string converted to camelCase.
  */
-function snakeCaseToCamelCase($name)
+function snakeCaseToCamelCase(string $name): string
 {
-    if ($name === null) {
-        return null;
-    }
     return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $name))));
 }
 
 /**
- * Converts a string with \ as namespace separator to PascalCase.
+ * Converts a string with / or \ as namespace separators to PascalCase.
+ * Each segment of the namespace is capitalized independently, ensuring that 
+ * even incorrectly cased inputs are handled correctly.
  *
- * @param string $name The string with \ as namespace separator.
+ * @param string $name The string with namespace separators.
  * @return string The string converted to PascalCase.
  */
-function namespaceToPascalCase($name)
-{
-    return str_replace(' ', '\\', ucwords(str_replace('\\', ' ', strtolower($name))));
+function namespaceToPascalCase(string $name): string {
+    $name = str_replace('/', '\\', $name);
+    $segments = explode('\\', trim($name, '\\'));
+
+    // Transform each segment to PascalCase
+    $transformed = array_map(function($segment) {
+        return ucfirst(strtolower($segment));
+    }, $segments);
+
+    $finalNamespace = implode('\\', $transformed);
+    return $finalNamespace;
 }
+
+

@@ -69,34 +69,37 @@ class SwitchCodeGenerator
     {
         $interfaceTypeName = "{$this->data->className}::{$this->getInterfaceTypeName()}";
         $caseDataFieldName = $this->getCaseDataFieldName();
+        $interfaceFieldName = $this->getInterfaceTypeName();
         $switchFieldName = $this->fieldName;
 
-        $this->data->fields->addLine("private ?$caseDataFieldName \${$caseDataFieldName} = null;");
-        $this->data->addMethod(
-            (new CodeBlock())
-                ->addLine("public function {$caseDataFieldName}(): ?{$caseDataFieldName}")
-                ->addLine("{")
-                ->indent()
-                ->addLine('/**')
-                ->addLine(
-                    " * {$interfaceTypeName}: Gets or sets the data associated with the "
-                    . "`{$switchFieldName}` field."
-                )
-                ->addLine(' */')
-                ->addLine("return \$this->{$caseDataFieldName};")
-                ->unindent()
-                ->addLine("}")
-        );
-        $setterMethodName = "set" . ucfirst($caseDataFieldName);
-        $this->data->addMethod(
-            (new CodeBlock())
-                ->addLine("public function {$setterMethodName}(\${$caseDataFieldName}): void")
-                ->addLine("{")
-                ->indent()
-                ->addLine("\$this->{$caseDataFieldName} = \${$caseDataFieldName};")
-                ->unindent()
-                ->addLine("}")
-        );
+        $this->data->fields->addLine("private ?$interfaceFieldName \${$caseDataFieldName} = null;");
+        if ($interfaceFieldName != 'array') {
+            $this->data->addMethod(
+                (new CodeBlock())
+                    ->addLine("public function get".ucfirst($caseDataFieldName)."(): ?{$interfaceFieldName}")
+                    ->addLine("{")
+                    ->indent()
+                    ->addLine('/**')
+                    ->addLine(
+                        " * {$interfaceTypeName}: Gets or sets the data associated with the "
+                        . "`{$switchFieldName}` field."
+                    )
+                    ->addLine(' */')
+                    ->addLine("return \$this->{$caseDataFieldName};")
+                    ->unindent()
+                    ->addLine("}")
+            );
+            $setterMethodName = "set" . ucfirst($caseDataFieldName);
+            $this->data->addMethod(
+                (new CodeBlock())
+                    ->addLine("public function {$setterMethodName}(?{$interfaceFieldName} \${$caseDataFieldName}): void")
+                    ->addLine("{")
+                    ->indent()
+                    ->addLine("\$this->{$caseDataFieldName} = \${$caseDataFieldName};")
+                    ->unindent()
+                    ->addLine("}")
+            );
+        }
         $this->data->reprFields[] = $caseDataFieldName;
     }
 
@@ -132,7 +135,7 @@ class SwitchCodeGenerator
         $this->data->deserialize->beginControlFlow($controlFlow);
 
         $fieldToStringExpression = $this->getFieldData()->type instanceof EnumType
-            ? "{$this->getFieldData()->type->name()}(\$data->{$this->fieldName})->name"
+            ? "\$data->{$this->fieldName}"
             : "strval(\$data->{$this->fieldName})";
 
         if (getInstructions($protocolCase) === []) {
@@ -146,7 +149,7 @@ class SwitchCodeGenerator
             );
             $this->data->serialize->endControlFlow();
 
-            $this->data->deserialize->addLine("\$data->{$this->getCaseDataFieldName()} = null;");
+            $this->data->deserialize->addLine("\$data->set".ucfirst($this->getCaseDataFieldName())."(null);");
         } else {
             $this->data->addAuxiliaryType(
                 $this->generateCaseDataType($protocolCase, $caseDataTypeName, $caseContext)
@@ -161,11 +164,11 @@ class SwitchCodeGenerator
             );
             $this->data->serialize->endControlFlow();
             $this->data->serialize->addLine(
-                "{$caseDataTypeName}::serialize(\$writer, \$data->{$this->getCaseDataFieldName()});"
+                "{$caseDataTypeName}::serialize(\$writer, \$data->get".ucfirst($this->getCaseDataFieldName())."());"
             );
 
             $this->data->deserialize->addLine(
-                "\$data->{$this->getCaseDataFieldName()} = {$caseDataTypeName}::deserialize(\$reader);"
+                "\$data->set".ucfirst($this->getCaseDataFieldName())."({$caseDataTypeName}::deserialize(\$reader));"
             );
         }
 

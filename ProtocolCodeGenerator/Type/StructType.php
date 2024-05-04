@@ -4,38 +4,21 @@ namespace ProtocolCodeGenerator\Type;
 
 use ProtocolCodeGenerator\Type\CustomType;
 
+/**
+ * Represents a struct type in the protocol.
+ */
 class StructType extends CustomType
 {
-    private $name;
-    private $fixedSize;
-    private $bounded;
-    private $sourcePath;
-
-    public function __construct($name, $fixedSize, $bounded, $sourcePath)
+    /**
+     * Creates a new struct type.
+     *
+     * @param string $name The name of the struct type.
+     * @param ?int $fixedSize The fixed size of the struct type.
+     * @param bool $bounded Whether the struct type is bounded.
+     * @param string $sourcePath The source path of the struct type.
+     */
+    public function __construct(string $name, ?int $fixedSize, bool $bounded, string $sourcePath)
     {
-        $this->name = $name;
-        $this->fixedSize = $fixedSize;
-        $this->bounded = $bounded;
-        $this->sourcePath = $sourcePath;
-    }
-
-    public function name()
-    {
-        return $this->name;
-    }
-
-    public function fixedSize()
-    {
-        return $this->fixedSize;
-    }
-
-    public function bounded()
-    {
-        return $this->bounded;
-    }
-
-    public function sourcePath()
-    {
-        return namespaceToPascalCase($this->sourcePath);
+        parent::__construct($name, $fixedSize, $bounded, $sourcePath);
     }
 }

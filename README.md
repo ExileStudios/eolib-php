@@ -36,7 +36,7 @@ Here's an example of how to use the PacketFamily class from the library:
 
     require_once 'vendor/exilestudios/eolib-php-dist/vendor/autoload.php';
 
-    use Eolib\Protocol\Generated\Net\PacketFamily;
+    use Eolib\Protocol\Net\PacketFamily;
 
     // Access packet family constants
     echo PacketFamily::CONNECTION; // Output: 1
@@ -98,7 +98,7 @@ To fetch the latest protocol files, generate the protocol code, and generate the
 ```console
 $ composer build
 ```
-The generated protocol code will be available in the Eolib/Protocol/Generated directory. Under the namespace `Protocol\Generated`.
+The generated protocol code will be available in the Eolib/Protocol directory. Under the namespace `Eolib\Protocol`.
 The generated documentation will be available in the docs directory.
 
 ## License
