@@ -73,11 +73,15 @@ jobs:
         run: |
           git config user.name 'github-actions'
           git config user.email 'github-actions@github.com'
-          git add .
-          git commit -m "Update generated files and workflow for release ${{ github.ref_name }}"
-          git push origin HEAD:main
-          git tag ${{ github.ref_name }}
-          git push origin ${{ github.ref_name }}
-
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Update generated files and workflow for release ${{ github.ref_name }}"
+            git push origin HEAD:main
+            git tag ${{ github.ref_name }}
+            git push origin ${{ github.ref_name }}
+          else
+            echo "No changes to commit"
+          fi
+          
       - name: Cleanup Temporary Files
         run: rm -rf generated_files
